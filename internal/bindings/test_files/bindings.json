@@ -1,0 +1,382 @@
+{
+    "data": [
+        {
+            "key": "Binding",
+            "id": "172af4e5391e4cd3b29c65db7f8549ca",
+            "organization_id": "894308ac10fc4e49a95047cef090ac32",
+            "project_id": "6594c20a54284187aec4d6f356bd2a63",
+            "environment_id": "b45b54b388484127bcd40ba308ed3c08",
+            "created_at": "2025-03-05T17:18:03+00:00",
+            "updated_at": "2025-03-05T17:18:03+00:00",
+            "name": "Binding",
+            "urn": "prn:t-mobilecom:opalservice:Binding",
+            "description": null,
+            "actions": {
+                "read": {
+                    "name": "read",
+                    "description": null,
+                    "attributes": null,
+                    "id": "3b86bc0d9d954fdd9a75c820d629070e",
+                    "key": "read"
+                },
+                "create": {
+                    "name": "create",
+                    "description": null,
+                    "attributes": null,
+                    "id": "b79e9831926e48ab8f5d97f6654f1a24",
+                    "key": "create"
+                },
+                "update": {
+                    "name": "update",
+                    "description": null,
+                    "attributes": null,
+                    "id": "e02d8a0c52904d80ae5b3cecb9477333",
+                    "key": "update"
+                },
+                "delete": {
+                    "name": "delete",
+                    "description": null,
+                    "attributes": null,
+                    "id": "5dbf2fd935fa4f7e99a740f01280c51e",
+                    "key": "delete"
+                }
+            },
+            "type_attributes": null,
+            "attributes": {
+                "name": {
+                    "type": "string",
+                    "description": null,
+                    "id": "efb5b0ff8c7f4ea3bc0e0ba5f82ea486",
+                    "key": "name"
+                }
+            },
+            "roles": {},
+            "relations": {
+                "parent": {
+                    "description": null,
+                    "resource_id": "37414dbbc52e4544ac01797cac30f9fa",
+                    "resource": "ed113f30-bbda-11ef-87ea-c03c5946f955"
+                }
+            },
+            "action_groups": {}
+        },
+        {
+            "key": "ed113f30-bbda-11ef-87ea-c03c5946f955",
+            "id": "37414dbbc52e4544ac01797cac30f9fa",
+            "organization_id": "894308ac10fc4e49a95047cef090ac32",
+            "project_id": "6594c20a54284187aec4d6f356bd2a63",
+            "environment_id": "b45b54b388484127bcd40ba308ed3c08",
+            "created_at": "2025-02-10T18:33:06+00:00",
+            "updated_at": "2025-02-10T18:33:06+00:00",
+            "name": "Account",
+            "urn": "prn:t-mobilecom:opalservice:ed113f30-bbda-11ef-87ea-c03c5946f955",
+            "description": null,
+            "actions": {
+                "getallaccounts": {
+                    "name": "getallaccounts",
+                    "description": null,
+                    "attributes": {},
+                    "id": "70f2b5160b3b4e0a9e6fed3084dd51ce",
+                    "key": "getallaccounts"
+                },
+                "deleteaccount": {
+                    "name": "deleteaccount",
+                    "description": null,
+                    "attributes": {},
+                    "id": "c4461e075fcc4721b561a415e33556c4",
+                    "key": "deleteaccount"
+                },
+                "createaccount": {
+                    "name": "createaccount",
+                    "description": null,
+                    "attributes": {},
+                    "id": "71e4523b26c94e959eee044437ec16ff",
+                    "key": "createaccount"
+                },
+                "updateaccount": {
+                    "name": "updateaccount",
+                    "description": null,
+                    "attributes": {},
+                    "id": "12472dbe0db04021a39bab9635d0caa5",
+                    "key": "updateaccount"
+                },
+                "getaccountbyid": {
+                    "name": "getaccountbyid",
+                    "description": null,
+                    "attributes": {},
+                    "id": "e231238e0a954b22a643e08419f23ab5",
+                    "key": "getaccountbyid"
+                }
+            },
+            "type_attributes": null,
+            "attributes": {
+                "tags": {
+                    "type": "object_array",
+                    "description": null,
+                    "id": "aff86f0f8dca4893928a5e7c9a9d1ca4",
+                    "key": "tags"
+                }
+            },
+            "roles": {},
+            "relations": {
+                "parent": {
+                    "description": null,
+                    "resource_id": "97c3341f03444af180a7307a40713eb9",
+                    "resource": "ed113dd2-bbda-11ef-87ea-c03c5946f955"
+                }
+            },
+            "action_groups": {}
+        },
+        {
+            "key": "ed113bda-bbda-11ef-87ea-c03c5946f955",
+            "id": "757018cc199f45c895339c089ecc6155",
+            "organization_id": "894308ac10fc4e49a95047cef090ac32",
+            "project_id": "6594c20a54284187aec4d6f356bd2a63",
+            "environment_id": "b45b54b388484127bcd40ba308ed3c08",
+            "created_at": "2025-02-10T18:30:48+00:00",
+            "updated_at": "2025-02-10T18:30:48+00:00",
+            "name": "Tenant",
+            "urn": "prn:t-mobilecom:opalservice:ed113bda-bbda-11ef-87ea-c03c5946f955",
+            "description": null,
+            "actions": {
+                "readtenant": {
+                    "name": "read tenant",
+                    "description": "tenant read",
+                    "attributes": {},
+                    "id": "364b4052a40a4631a16d8a8228f561f6",
+                    "key": "readtenant"
+                },
+                "updatetenant": {
+                    "name": "update tenant",
+                    "description": "tenant updation",
+                    "attributes": {},
+                    "id": "152e10d758df48e5a1af290addf0617b",
+                    "key": "updatetenant"
+                },
+                "create_tenant": {
+                    "name": "create_tenant",
+                    "description": null,
+                    "attributes": {},
+                    "id": "0d81f381f3a84eb8b2ef98b4588d97a6",
+                    "key": "create_tenant"
+                },
+                "580f9faf-9916-54b9-bda1-ee8891c85b5d": {
+                    "name": "view tenant",
+                    "description": "tenant view",
+                    "attributes": {},
+                    "id": "3b4c7cf2a7c049b9b1585a031fde7572",
+                    "key": "580f9faf-9916-54b9-bda1-ee8891c85b5d"
+                }
+            },
+            "type_attributes": null,
+            "attributes": {},
+            "roles": {
+                "a3cfb093-280f-5b18-8c7d-a96df392e443": {
+                    "name": "Tenant_Admin",
+                    "description": "Tenant Admin desc goes here",
+                    "permissions": [
+                        "create_tenant"
+                    ],
+                    "attributes": {
+                        "id": "a3cfb093-280f-5b18-8c7d-a96df392e443",
+                        "name": "Tenant_Admin",
+                        "version": "1.0",
+                        "roleType": "CUSTOM",
+                        "tenantId": "3f89b810-5d1d-9abf-a04d-df9c1aeb6d09",
+                        "createdAt": "2025-03-20T19:08:06-05:00",
+                        "createdBy": "48030163-212f-4dbd-92e4-4d6c92da82a3",
+                        "updatedAt": "2025-03-20T19:08:06-05:00",
+                        "updatedBy": "48030163-212f-4dbd-92e4-4d6c92da82a3",
+                        "description": "Tenant Admin desc goes here",
+                        "permissions": [
+                            "create_tenant"
+                        ],
+                        "assignableScopeRef": "ed113bda-bbda-11ef-87ea-c03c5946f955"
+                    },
+                    "extends": [],
+                    "granted_to": null,
+                    "key": "a3cfb093-280f-5b18-8c7d-a96df392e443",
+                    "id": "455c79c3ed444a3dbdd09481d22b818d",
+                    "organization_id": "894308ac10fc4e49a95047cef090ac32",
+                    "project_id": "6594c20a54284187aec4d6f356bd2a63",
+                    "environment_id": "b45b54b388484127bcd40ba308ed3c08",
+                    "resource_id": "757018cc199f45c895339c089ecc6155",
+                    "resource": "ed113bda-bbda-11ef-87ea-c03c5946f955",
+                    "created_at": "2025-03-21T00:08:06+00:00",
+                    "updated_at": "2025-03-21T00:08:06+00:00"
+                }
+            },
+            "relations": {
+                "parent": {
+                    "description": null,
+                    "resource_id": "c794fc65ce314990b742ab5c4c1b796c",
+                    "resource": "dc3b737d-bbc9-11ef-87ea-c03c5946f955"
+                }
+            },
+            "action_groups": {}
+        },
+        {
+            "key": "ed113dd2-bbda-11ef-87ea-c03c5946f955",
+            "id": "97c3341f03444af180a7307a40713eb9",
+            "organization_id": "894308ac10fc4e49a95047cef090ac32",
+            "project_id": "6594c20a54284187aec4d6f356bd2a63",
+            "environment_id": "b45b54b388484127bcd40ba308ed3c08",
+            "created_at": "2025-02-10T18:31:46+00:00",
+            "updated_at": "2025-02-10T18:31:46+00:00",
+            "name": "Client Organization Unit",
+            "urn": "prn:t-mobilecom:opalservice:ed113dd2-bbda-11ef-87ea-c03c5946f955",
+            "description": null,
+            "actions": {
+                "getclientorganizationunit": {
+                    "name": "getclientorganizationunit",
+                    "description": null,
+                    "attributes": {},
+                    "id": "c8b54cdf349b403d9fe434e0efcdb988",
+                    "key": "getclientorganizationunit"
+                },
+                "updateclientorganizationunit": {
+                    "name": "updateclientorganizationunit",
+                    "description": null,
+                    "attributes": {},
+                    "id": "e8a4c80d49c44007ad2a28ca0011ffe6",
+                    "key": "updateclientorganizationunit"
+                },
+                "deleteclientorganizationunit": {
+                    "name": "deleteclientorganizationunit",
+                    "description": null,
+                    "attributes": {},
+                    "id": "68d8a72fd4f24eb0bf87cde31228202a",
+                    "key": "deleteclientorganizationunit"
+                },
+                "createclientorganizationunit": {
+                    "name": "createclientorganizationunit",
+                    "description": null,
+                    "attributes": {},
+                    "id": "fffdf99f03d5439491d9fef7182799b9",
+                    "key": "createclientorganizationunit"
+                },
+                "getallclientorganizations": {
+                    "name": "getallclientorganizations",
+                    "description": null,
+                    "attributes": {},
+                    "id": "4ee651f99fad498aa5a2ff42684b2164",
+                    "key": "getallclientorganizations"
+                },
+                "364debd5-e44a-4d01-a7e2-1f1ade85ab59": {
+                    "name": "364debd5-e44a-4d01-a7e2-1f1ade85ab59",
+                    "description": null,
+                    "attributes": {},
+                    "id": "266777211367495e998e7ee68ed3e82d",
+                    "key": "364debd5-e44a-4d01-a7e2-1f1ade85ab59"
+                }
+            },
+            "type_attributes": null,
+            "attributes": {},
+            "roles": {},
+            "relations": {
+                "parent": {
+                    "description": null,
+                    "resource_id": "757018cc199f45c895339c089ecc6155",
+                    "resource": "ed113bda-bbda-11ef-87ea-c03c5946f955"
+                }
+            },
+            "action_groups": {}
+        },
+        {
+            "key": "dc3b737d-bbc9-11ef-87ea-c03c5946f955",
+            "id": "c794fc65ce314990b742ab5c4c1b796c",
+            "organization_id": "894308ac10fc4e49a95047cef090ac32",
+            "project_id": "6594c20a54284187aec4d6f356bd2a63",
+            "environment_id": "b45b54b388484127bcd40ba308ed3c08",
+            "created_at": "2025-02-10T18:30:11+00:00",
+            "updated_at": "2025-02-10T18:30:11+00:00",
+            "name": "MCPRoot",
+            "urn": "prn:t-mobilecom:opalservice:dc3b737d-bbc9-11ef-87ea-c03c5946f955",
+            "description": null,
+            "actions": {
+                "delete": {
+                    "name": "delete",
+                    "description": null,
+                    "attributes": null,
+                    "id": "f37b59cc00f8436c9769471c7ba67813",
+                    "key": "delete"
+                },
+                "read": {
+                    "name": "read",
+                    "description": null,
+                    "attributes": null,
+                    "id": "01337938588e4380a3e5f82213131e87",
+                    "key": "read"
+                },
+                "create": {
+                    "name": "create",
+                    "description": null,
+                    "attributes": null,
+                    "id": "e827159adb4e40ce9be550f510631038",
+                    "key": "create"
+                },
+                "update": {
+                    "name": "update",
+                    "description": null,
+                    "attributes": null,
+                    "id": "5deccadc17404964816e069ac8e234a9",
+                    "key": "update"
+                }
+            },
+            "type_attributes": null,
+            "attributes": {},
+            "roles": {},
+            "relations": {},
+            "action_groups": {}
+        },
+        {
+            "key": "464b359e-3d43-4461-bb92-d36ebaf29082",
+            "id": "e2ef603377664cb6965d19737c29314e",
+            "organization_id": "894308ac10fc4e49a95047cef090ac32",
+            "project_id": "6594c20a54284187aec4d6f356bd2a63",
+            "environment_id": "b45b54b388484127bcd40ba308ed3c08",
+            "created_at": "2025-02-27T21:16:11+00:00",
+            "updated_at": "2025-02-27T21:16:11+00:00",
+            "name": "Role",
+            "urn": "prn:t-mobilecom:opalservice:464b359e-3d43-4461-bb92-d36ebaf29082",
+            "description": null,
+            "actions": {
+                "delete": {
+                    "name": "delete",
+                    "description": null,
+                    "attributes": null,
+                    "id": "c03455f41e0f4707a09edd4b779601e7",
+                    "key": "delete"
+                },
+                "update": {
+                    "name": "update",
+                    "description": null,
+                    "attributes": null,
+                    "id": "10f37447b4ae4013ab7b606f4fe1d844",
+                    "key": "update"
+                },
+                "create": {
+                    "name": "create",
+                    "description": null,
+                    "attributes": null,
+                    "id": "0984011870aa4b2dae4f3fd0a4e72093",
+                    "key": "create"
+                },
+                "read": {
+                    "name": "read",
+                    "description": null,
+                    "attributes": null,
+                    "id": "eff781196a8c4caaba1078af087d6cae",
+                    "key": "read"
+                }
+            },
+            "type_attributes": null,
+            "attributes": {},
+            "roles": {},
+            "relations": {},
+            "action_groups": {}
+        }
+    ],
+    "total_count": 6,
+    "page_count": 6
+}

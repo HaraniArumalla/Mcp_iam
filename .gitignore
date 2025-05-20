@@ -1,0 +1,62 @@
+#Binaries for programs and plugins
+
+*.exe
+*.dll
+*.so
+*.dylib
+*.env
+
+#Output of the go coverage tool
+coverage.out
+
+#Directories
+
+**/vendor/
+**/bin/
+**/out/
+**/build/
+**/dist/
+
+#Dependancy directories
+
+vendor/
+
+# Go Modules
+
+go.sum
+
+# Logs
+
+*.log
+
+#IDE Files
+
+.vscode/
+**k8s/
+
+#OS-generated files
+
+.DS_Store
+Thumbs.db
+
+# Test binary
+
+*.test
+
+# Debug
+
+*.prof
+*.trace
+*.pprof
+
+#Miscellaneous
+
+*.tmp
+*.swp
+*.bak
+
+#Ignore GraphQL generated and custom code
+gql/generated/
+gql/models/
+gql/resolvers/
+

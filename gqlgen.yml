@@ -1,0 +1,66 @@
+schema:
+  - gql/schemas/schema.graphqls
+  - gql/schemas/tags.graphqls
+  - gql/schemas/accounts.graphqls
+  - gql/schemas/binding.graphqls
+  - gql/schemas/clientorgunits.graphqls
+  - gql/schemas/groups.graphqls
+  - gql/schemas/roles.graphqls
+  - gql/schemas/root.graphqls
+  - gql/schemas/tenants.graphqls
+  - gql/schemas/users.graphqls
+
+
+exec:
+  filename: gql/generated/generated.go
+  package: generated
+
+
+model:
+  filename: gql/models/models_gen.go
+  package: models
+
+
+resolver:
+  layout: follow-schema
+  dir: gql/resolvers
+  package: resolvers
+  
+models:
+  UUID:
+    model:
+      - github.com/99designs/gqlgen/graphql.UUID
+  Mutation:
+    model: iam_services_main_v1/gql/generated.Mutation
+  Query:
+    model: iam_services_main_v1/gql/generated.Query
+  Account:
+    fields:
+      parentOrg:
+        resolver: true
+      tenant:
+        resolver: true
+      accountOwner:
+        resolver: true  
+  ClientOrganizationUnit:
+    fields:
+      accounts:
+        resolver: true
+      tenant:
+        resolver: true
+      parentOrg:
+        resolver: true
+      accountOwner:
+        resolver: true
+  Binding:
+    fields:
+      role:
+        resolver: true
+      principal:
+        resolver: true
+  Tenant:
+    fields:
+      clientOrganizationUnits:
+        resolver: true
+      accountOwner:
+        resolver: true  

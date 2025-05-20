@@ -1,0 +1,219 @@
+include:
+  - project: tmobile/templates
+    file:
+      - /gitlab-ci/.tmo.global.common.gitlab-ci.yml
+      - '/gitlab-ci/.tmo.function.go.gitlab-ci.yml'
+      - '/gitlab-ci/.tmo.job.docker.gitlab-ci.yml'
+      - /gitlab-ci/.tmo.function.helm-deploy.gitlab-ci.yml
+  # - project: tmobile/mcp-self-service/core-infra/gitlab-templates/templates
+  #   file:
+  #     - .tmo.pipeline.helm-test.gitlab-ci.yml
+  # - project: tmobile/mcp-self-service/core-infra/gitlab-templates/templates    
+  #   file: .tmo.pipeline.schema-publish.gitlab-ci.yml
+  #   ref: feature/generic-dev    
+
+# test stage being last is so that will tmobile wide testing
+# can happen at the last stage while unit tests happen before
+stages:
+  - tmo
+  - lint
+  - unit-test
+  - package
+  - test-chart
+  - deploy
+  - cleanup
+  - stop
+  - test
+  - schema-publish
+
+variables:
+  CONTAINER_VERSION: "0"
+  EXTRA_DOCKER_TAG: "$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CONTAINER_VERSION.$CI_PIPELINE_IID"
+  HELM_CHART_GITLAB_PROJECT_NAME: "tmobile/mcp/cloudsecurity/backend_helm_templates"
+  HELM_CHART_DIR: "./helm-charts"
+  K8S_API_LOGIN_URL: ${K8S_API_LOGIN_URL}
+  K8S_NS: ${CONDUCTOR_NS}
+  K8S_CLUSTER: ${CONDUCTOR_TARGET}
+  K8S_SERVER_URL: ${K8S_SERVER_URL}
+  K8S_USER: ${CONDUCTOR_USER}
+  K8S_PASS: ${CONDUCTOR_PASS}
+  K8S_CREATE_IMAGE_PULL_SECRET: "true"
+  K8S_PASS_BASE64: "false"
+  TMO_SCA_SCAN: "false"
+  GO_VERSION: "1.23-alpine"
+  APP_NAME: ${APP_NAME}
+  ENVIRONMENT: ${ENVIRONMENT} 
+  DB_HOST: ${DB_HOST}
+  DB_USERNAME: ${DB_USERNAME}
+  DB_PORT: ${DB_PORT}
+  PERMIT_PDP_ENDPOINT: ${PERMIT_PDP_ENDPOINT}
+  PERMIT_PROJECT: ${PERMIT_PROJECT}
+  PERMIT_ENV: ${PERMIT_ENV}
+  DB_PASSWORD: ${DB_PASSWORD}
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+  PERMIT_TOKEN: ${PERMIT_TOKEN}
+  TLS_SECRET: ${TLS_SECRET}
+    
+#   TRIGGER_DOWNSTREAM_PIPELINE: 'true'
+#   # variables to be set from each subgraph project
+#   SUBGRAPH_PROJECT_HANDLE: mcp-iam
+#   SUBGRAPH_ROUTING_URL: https://mcpiam.duck-dev-w2.kube.t-mobile.com/graphql
+#   SCHEMA_DIR_PATH: gql/schemas
+
+go-lint:
+  image: golang:1.23-alpine
+  stage: lint
+  extends: .go-lint
+  variables:
+    GO_VERSION: "1.23" 
+  script:
+    - echo "Running linter with Go version."
+    - go version
+    - go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+    - go run -mod=mod github.com/99designs/gqlgen generate
+    - golangci-lint run
+    - echo "Linting completed."  
+  allow_failure: true
+
+go-test:
+  image: golang:1.23-alpine
+  stage: unit-test
+  variables:
+    GO_VERSION: "1.23" 
+    GO_TEST_ARGS: "--format testname --junitfile $CI_PROJECT_DIR/reports/test-report.xml ./..."
+    GO_TEST_ARTIFACTS: "$CI_PROJECT_DIR/reports"
+  script:
+    - echo "Running tests with Go version."
+    - go version
+    - go install gotest.tools/gotestsum@latest 
+    - go run -mod=mod github.com/99designs/gqlgen generate
+    - mkdir -p "$GO_TEST_ARTIFACTS"
+    - eval "gotestsum $GO_TEST_ARGS" 
+    - echo "Tests completed. Reports available at $GO_TEST_ARTIFACTS/test-report.xml"
+  artifacts:
+    paths:
+      - $GO_TEST_ARTIFACTS/test-report.xml 
+  allow_failure: true
+
+.rules:
+  dev: &dev_rules
+    - if: '$CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH'
+  
+  dev-unified: &dev_unified_rules
+    - if: '$CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+
+  stg: &stg_rules
+    - if: '$CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+      when: manual
+
+  prd: &prd_rules
+    - if: '$CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+      when: manual
+
+.dev-vars:
+  variables:
+    AUTO_DEPLOY: "true"
+
+prepare-dev-deploy:
+  stage: deploy
+  script:
+    # Get the length of CI_PROJECT_NAME
+    - PROJECT_NAME_LENGTH=${#CI_PROJECT_NAME}
+
+    # Define the domain and calculate its length
+    - DOMAIN=".azure.kube.t-mobile.com"
+    - DOMAIN_LENGTH=${#DOMAIN}
+
+    # Prepare CI_BRANCH_SHORT
+    - CI_BRANCH_SHORT=$(basename $CI_COMMIT_REF_NAME)
+    - CI_BRANCH_SHORT=${CI_BRANCH_SHORT//[-_]/}
+    - CI_BRANCH_SHORT=$(echo $CI_BRANCH_SHORT | tr '[:upper:]' '[:lower:]')
+
+    # Calculate the length to cut CI_BRANCH_SHORT
+    # 63 is the maximum size allowed for DNS-compliant Kubernetes service names.
+    # Subtract the length of the domain and project name from 63 to determine the max length for the branch
+    - MAX_BRANCH_LENGTH=$((MAX_CONDUCKTOR_HOSTNAME_LENGTH - DOMAIN_LENGTH - PROJECT_NAME_LENGTH))
+
+    # Trim to the max allowed length
+    - CI_BRANCH_SHORT=${CI_BRANCH_SHORT:0:MAX_BRANCH_LENGTH}
+
+    # Save CI_BRANCH_SHORT to the environment file
+    - echo "CI_BRANCH_SHORT=${CI_BRANCH_SHORT}" >> dev-deploy.env
+    # Output the environment file for review
+    - cat dev-deploy.env
+  artifacts:
+    reports:
+      dotenv: dev-deploy.env
+  rules: *dev_rules
+
+.deploy-mcp-iam:
+  extends: .helm_deploy
+  stage: deploy
+  variables:
+    K8S_IMAGE_PULL_SECRET_NAME: ${K8S_CREATE_IMAGE_PULL_SECRET}
+    HELM_APP_NAME: mcp-iam-${CI_BRANCH_SHORT}
+    HELM_DEFAULT_VALUES_J2: "deploy/values-dev.yaml.j2"
+    HELM_VALUES: "deploy/values-dev.yaml"
+    HOSTNAME: mcp-iam-$CI_BRANCH_SHORT.azure.kube.t-mobile.com
+
+deploy-mcp-iam-dev:
+  needs: [prepare-dev-deploy]
+  extends:
+    - .deploy-mcp-iam
+    - .dev-vars
+  environment:
+    name: dev/${CI_COMMIT_REF_SLUG}
+    url: http://${FQDN}/${APP_PATH_URI}/
+    on_stop: cleanup-mcp-iam-dev
+    auto_stop_in: 5 days
+  rules: *dev_rules
+
+deploy-mcp-iam-dev-unified:
+  extends: .deploy-mcp-iam
+  environment: dev-unified
+  variables:
+    K8S_IMAGE_PULL_SECRET_NAME: ${K8S_CREATE_IMAGE_PULL_SECRET}
+    HELM_APP_NAME: mcp-iam-dev-unified
+    HELM_DEFAULT_VALUES_J2: "deploy/values-dev.yaml.j2"
+    HELM_VALUES: "deploy/values-dev.yaml"
+    HOSTNAME: mcp-iam.mcp-dev-unified.azure.kube.t-mobile.com
+  rules: *dev_unified_rules
+
+deploy-mcp-iam-stg:
+  extends: .deploy-mcp-iam
+  environment: stg
+  variables:
+    K8S_IMAGE_PULL_SECRET_NAME: ${K8S_CREATE_IMAGE_PULL_SECRET}
+    HELM_APP_NAME: mcp-iam-stg
+    HELM_DEFAULT_VALUES_J2: "deploy/values-stg.yaml.j2"
+    HELM_VALUES: "deploy/values-stg.yaml"
+    HOSTNAME: mcp-iam.mcp-stg.azure.kube.t-mobile.com
+  rules: *stg_rules
+
+deploy-mcp-iam-prd:
+  extends: .deploy-mcp-iam
+  environment: prd
+  variables:
+    K8S_IMAGE_PULL_SECRET_NAME: ${K8S_CREATE_IMAGE_PULL_SECRET}
+    HELM_APP_NAME: mcp-iam-prd
+    HELM_DEFAULT_VALUES_J2: "deploy/values-prd.yaml.j2"
+    HELM_VALUES: "deploy/values-prd.yaml"
+    HOSTNAME: mcp-iam.mcp.azure.kube.t-mobile.com
+  rules: *prd_rules
+
+cleanup-mcp-iam-dev:
+  extends:
+    - .helm_uninstall
+    - .dev-vars
+  stage: stop
+  variables:
+    GIT_STRATEGY: none
+    HELM_APP_NAME: mcp-iam-${CI_BRANCH_SHORT}
+  environment:
+    name: dev/${CI_COMMIT_REF_SLUG}
+    action: stop
+  rules:
+    - if: $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
+      when: manual
+      allow_failure: true
+

@@ -1,0 +1,641 @@
+"""
+ISO 8601 formatted date-time string
+"""
+scalar DateTime
+
+"""
+Custom JSON scalar type to handle arbitrary JSON data
+"""
+scalar JSON
+
+"""
+Universally Unique Identifier
+"""
+scalar UUID
+
+"""
+Defines the relation type enumeration
+"""
+enum RelationTypeEnum {
+  """
+  Child relation type
+  """
+  CHILD
+  """
+  Parent relation type
+  """
+  PARENT
+  """
+  Self relation type
+  """
+  SELF
+}
+
+"""
+Defines the role type enumeration
+"""
+enum RoleTypeEnum {
+  """
+  Custom role type
+  """
+  CUSTOM
+  """
+  Default role type
+  """
+  DEFAULT
+}
+
+"""
+Defines the Status type enumeration
+"""
+enum StatusTypeEnum {
+  """
+  Active Status type
+  """
+  ACTIVE
+  """
+  Cancelled Status type
+  """
+  CANCELLED
+  """
+  Suspanded Status type
+  """
+  SUSPANDED
+}
+
+"""
+Define a union for the possible 'data' types
+"""
+union Data = Account | Binding | ClientOrganizationUnit | Group | Permission | Role | Root | Tenant | User
+
+"""
+Define a union for the possible operation results
+"""
+union OperationResult = ResponseError | SuccessResponse
+
+"""
+Standard Response Interface for both success and error responses
+"""
+interface Response {
+  """
+  Indicates if the operation was successful.
+  """
+  isSuccess: Boolean!
+
+  """
+  A message providing additional context or information about the operation.
+  """
+  message: String!
+}
+
+"""
+Success Response for a generic operation
+"""
+type SuccessResponse implements Response {
+  """
+  The data returned from the operation.
+  """
+  data: [Data]
+
+  """
+  Indicates if the operation was successful.
+  """
+  isSuccess: Boolean!
+
+  """
+  A message providing additional context or information about the operation.
+  """
+  message: String!
+}
+
+"""
+Standard Error Interface for the error responses
+"""
+interface Error {
+  """
+  Error code representing the type of error.
+  """
+  errorCode: String!
+
+  """
+  Details about the error.
+  """
+  errorDetails: JSON
+
+  """
+  A message providing information about the operation to the user.
+  """
+  message: String!
+
+  """
+  A message providing additional context or information about the operation for the logging.
+  """
+  systemMessage: String!
+}
+
+"""
+Define ResponseError for error cases
+"""
+type ResponseError implements Response & Error {
+  """
+  Error code representing the type of error.
+  """
+  errorCode: String!
+
+  """
+  Details about the error.
+  """
+  errorDetails: JSON
+
+  """
+  Indicates if the operation was successful.
+  """
+  isSuccess: Boolean!
+
+  """
+  A message providing additional context or information about the operation.
+  """
+  message: String!
+
+  """
+  A message providing additional context or information about the operation for the logging.
+  """
+  systemMessage: String!
+}
+
+
+"""
+Represents a Principal entity
+"""
+interface Principal {
+  """
+  Email of the principal
+  """
+  email: String!
+  """
+  Unique identifier of the principal
+  """
+  id: UUID!
+  """
+  Name of the principal
+  """
+  name: String!
+  """
+  Tenant associated with the principal
+  """
+  tenant: Tenant!
+}
+
+"""
+Represents a Resource entity
+"""
+interface Resource {
+  """
+  Timestamp of creation
+  """
+  createdAt: DateTime!
+  """
+  Identifier of the user who created the record
+  """
+  createdBy: UUID!
+  """
+  Unique identifier of the resource
+  """
+  id: UUID!
+  """
+  Name of the resource
+  """
+  name: String!
+  """
+  Timestamp of last update
+  """
+  updatedAt: DateTime!
+  """
+  Identifier of the user who last updated the record
+  """
+  updatedBy: UUID!
+}
+
+"""
+Represents an Organization entity
+"""
+interface Organization {
+  """
+  Timestamp of creation
+  """
+  createdAt: DateTime!
+  """
+  Identifier of the user who created the record
+  """
+  createdBy: UUID!
+  """
+  Description of the organization
+  """
+  description: String
+  """
+  Unique identifier of the organization
+  """
+  id: UUID!
+  """
+  Name of the organization
+  """
+  name: String!
+  """
+  Parent organization
+  """
+  parentOrg: Organization
+  """
+  Timestamp of last update
+  """
+  updatedAt: DateTime!
+  """
+  Identifier of the user who last updated the record
+  """
+  updatedBy: UUID!
+}
+
+"""
+Interface for entities that can have tags
+"""
+interface Taggable {
+  """
+  List of tags associated with the entity
+  """
+  tags: [Tags]
+}
+
+"""
+Defines input fields for deleting a resource
+"""
+input DeleteInput {
+  """
+  Unique identifier of the resource
+  """
+  id: UUID!
+}
+
+"""
+Defines input fields for deleting a resource
+"""
+input DeleteRoleInput {
+  """
+  assignable scope of the resource
+  """
+  assignableScopeRef: UUID!
+
+  """
+  Unique identifier of the role
+  """
+  id: UUID!
+}
+
+"""
+Root query type for fetching data
+"""
+type Query {
+  """
+  Fetch a specific account by its ID.
+  """
+  account(
+    """
+    Unique identifier of the account
+    """
+    id: UUID!
+  ): OperationResult
+
+  """
+  Fetch all accounts.
+  """
+  accounts: OperationResult
+
+  """
+  Fetch a specific binding by its ID.
+  """
+  binding(
+    """
+    Unique identifier of the binding
+    """
+    id: UUID!
+  ): OperationResult
+
+  """
+  Fetch all bindings.
+  """
+  bindings: OperationResult
+
+  """
+  Fetch a specific client organization unit by its ID.
+  """
+  clientOrganizationUnit(
+    """
+    Unique identifier of the client organization unit
+    """
+    id: UUID!
+  ): OperationResult
+
+  """
+  Fetch all client organization units.
+  """
+  clientOrganizationUnits: OperationResult
+
+  """
+  Fetch a specific organization by its ID.
+  """
+  organization(
+    """
+    Unique identifier of the organization
+    """
+    id: UUID!
+  ): OperationResult
+
+  """
+  Fetch all organizations.
+  """
+  organizations: OperationResult
+
+  """
+  Fetch a specific permission by its ID.
+  """
+  permission(
+    """
+    Unique identifier of the permission
+    """
+    id: UUID!
+  ): OperationResult
+
+  """
+  Fetch all permissions.
+  """
+  permissions: OperationResult
+
+  """
+  Fetch a specific resource by its ID.
+  """
+  resource(
+    """
+    Unique identifier of the resource
+    """
+    id: UUID!
+  ): OperationResult
+
+  """
+  Fetch all resources.
+  """
+  resources: OperationResult
+
+  """
+  Fetch a specific role by its ID.
+  """
+  role(
+    """
+    Unique identifier of the role
+    """
+    id: UUID!
+  ): OperationResult
+
+  """
+  Fetch all roles.
+  """
+  roles: OperationResult
+
+  """
+  Fetch a specific root by its ID.
+  """
+  root(
+    """
+    Unique identifier of the root
+    """
+    id: UUID!
+  ): OperationResult
+
+  """
+  Fetch a specific tenant by its ID.
+  """
+  tenant(
+    """
+    Unique identifier of the tenant
+    """
+    id: UUID!
+  ): OperationResult
+
+  """
+  Fetch all tenants.
+  """
+  tenants: OperationResult
+}
+
+"""
+Root mutation type for modifying data
+"""
+type Mutation {
+  """
+  Create a new account.
+  """
+  createAccount(
+    """
+    Input data for creating an account
+    """
+    input: CreateAccountInput!
+  ): OperationResult!
+
+  """
+  Create a new binding.
+  """
+  createBinding(
+    """
+    Input data for creating a binding
+    """
+    input: CreateBindingInput!
+  ): OperationResult!
+
+  """
+  Create a new client organization unit.
+  """
+  createClientOrganizationUnit(
+    """
+    Input data for creating a client organization unit
+    """
+    input: CreateClientOrganizationUnitInput!
+  ): OperationResult!
+
+  """
+  Create a new permission.
+  """
+  createPermission(
+    """
+    Input data for creating a permission
+    """
+    input: CreatePermissionInput!
+  ): OperationResult!
+
+  """
+  Create a new role.
+  """
+  createRole(
+    """
+    Input data for creating a role
+    """
+    input: CreateRoleInput!
+  ): OperationResult!
+
+  """
+  Create a new root.
+  """
+  createRoot(
+    """
+    Input data for creating a root
+    """
+    input: CreateRootInput!
+  ): OperationResult!
+
+  """
+  Create a new tenant.
+  """
+  createTenant(
+    """
+    Input data for creating a tenant
+    """
+    input: CreateTenantInput!
+  ): OperationResult!
+
+  """
+  Delete an existing account.
+  """
+  deleteAccount(
+    """
+    Input data for deleting an account
+    """
+    input: DeleteInput!
+  ): OperationResult!
+
+  """
+  Delete an existing binding.
+  """
+  deleteBinding(
+    """
+    Input data for deleting a binding
+    """
+    input: DeleteBindingInput!
+  ): OperationResult!
+
+  """
+  Delete an existing client organization unit.
+  """
+  deleteClientOrganizationUnit(
+    """
+    Input data for deleting a client organization unit
+    """
+    input: DeleteInput!
+  ): OperationResult!
+
+  """
+  Delete an existing permission.
+  """
+  deletePermission(
+    """
+    Input data for deleting a permission
+    """
+    input: DeleteInput!
+  ): OperationResult!
+
+  """
+  Delete an existing role.
+  """
+  deleteRole(
+    """
+    Input data for deleting a role
+    """
+    input: DeleteRoleInput!
+  ): OperationResult!
+
+  """
+  Delete an existing root.
+  """
+  deleteRoot(
+    """
+    Input data for deleting a root
+    """
+    input: DeleteInput!
+  ): OperationResult!
+
+  """
+  Delete an existing tenant.
+  """
+  deleteTenant(
+    """
+    Input data for deleting a tenant
+    """
+    input: DeleteInput!
+  ): OperationResult!
+
+  """
+  Update an existing account.
+  """
+  updateAccount(
+    """
+    Input data for updating an account
+    """
+    input: UpdateAccountInput!
+  ): OperationResult!
+
+  """
+  Update an existing binding.
+  """
+  updateBinding(
+    """
+    Input data for updating a binding
+    """
+    input: UpdateBindingInput!
+  ): OperationResult!
+
+  """
+  Update an existing client organization unit.
+  """
+  updateClientOrganizationUnit(
+    """
+    Input data for updating a client organization unit
+    """
+    input: UpdateClientOrganizationUnitInput!
+  ): OperationResult!
+
+  """
+  Update an existing permission.
+  """
+  updatePermission(
+    """
+    Input data for updating a permission
+    """
+    input: UpdatePermissionInput!
+  ): OperationResult!
+
+  """
+  Update an existing role.
+  """
+  updateRole(
+    """
+    Input data for updating a role
+    """
+    input: UpdateRoleInput!
+  ): OperationResult!
+
+  """
+  Update an existing root.
+  """
+  updateRoot(
+    """
+    Input data for updating a root
+    """
+    input: UpdateRootInput!
+  ): OperationResult!
+
+  """
+  Update an existing tenant.
+  """
+  updateTenant(
+    """
+    Input data for updating a tenant
+    """
+    input: UpdateTenantInput!
+  ): OperationResult!
+}
+

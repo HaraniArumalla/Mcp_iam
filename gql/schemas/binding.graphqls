@@ -1,0 +1,139 @@
+"""
+Represents a Binding entity
+"""
+type Binding {
+  """
+  Timestamp of creation
+  """
+  createdAt: DateTime!
+  """
+  Identifier of the user who created the record
+  """
+  createdBy: UUID!
+  """
+  Unique identifier of the binding
+  """
+  id: UUID!
+  """
+  Name of the binding
+  """
+  name: String!
+  """
+  Principal associated with the binding
+  """
+  principal: Principal!
+  """
+  Role associated with the binding
+  """
+  role: Role!
+  """
+  Scope reference associated with the binding
+  """
+  scopeRef: Resource!
+  """
+  Timestamp of last update
+  """
+  updatedAt: DateTime!
+  """
+  Identifier of the user who last updated the record
+  """
+  updatedBy: UUID!
+  """
+  Version of the binding
+  """
+  version: String!
+}
+
+"""
+Defines input fields for creating a binding
+"""
+input CreateBindingInput {
+  """
+  Name of the binding
+  """
+  name: String!
+  """
+  Principal ID associated with the binding
+  """
+  principalId: UUID!
+  """
+  Role ID associated with the binding
+  """
+  roleId: UUID!
+  """
+  Scope reference ID associated with the binding
+  """
+  scopeRefId: UUID!
+  """
+  Scope reference Instance associated with the binding
+  """
+  scopeRefInstanceId: UUID!
+  """
+  Version of the binding
+  """
+  version: String!
+}
+
+"""
+Defines input fields for updating a binding
+"""
+input UpdateBindingInput {
+  """
+  Unique identifier of the binding
+  """
+  id: UUID!
+  """
+  Updated name of the binding
+  """
+  name: String!
+  """
+  Updated principal ID associated with the binding
+  """
+  principalId: UUID!
+  """
+  Updated role ID associated with the binding
+  """
+  roleId: UUID!
+  """
+  Updated scope reference ID associated with the binding
+  """
+  scopeRefId: UUID!
+  """
+  Updated version of the binding
+  """
+  version: String!
+}
+
+"""
+Defines input fields for updating a binding
+"""
+input DeleteBindingInput {
+  """
+  Unique identifier of the binding
+  """
+  id: UUID!
+  """
+  Updated name of the binding
+  """
+  name: String!
+  """
+  Updated principal ID associated with the binding
+  """
+  principalId: UUID!
+  """
+  Updated role ID associated with the binding
+  """
+  roleId: UUID!
+  """
+  Updated scope reference ID associated with the binding
+  """
+  scopeRefId: UUID!
+  """
+  Updated scope reference ID associated with the binding
+  """
+  scopeRefInstanceId: UUID!
+  """
+  Updated version of the binding
+  """
+  version: String!
+}

@@ -1,0 +1,141 @@
+"""
+Represents a Client Organization Unit entity
+"""
+type ClientOrganizationUnit implements Organization & Resource {
+  """
+  User belongs to Account Owner
+  """
+  accountOwner: User!
+  """
+  All Accounts belongs to ClientOrganizationUnit
+  """
+  accounts: [Account!]
+  """
+  Timestamp of creation
+  """
+  createdAt: DateTime!
+  """
+  Identifier of the user who created the record
+  """
+  createdBy: UUID!
+  """
+  Description of the client organization unit
+  """
+  description: String
+  """
+  Unique identifier of the client organization unit
+  """
+  id: UUID!
+  """
+  Name of the client organization unit
+  """
+  name: String!
+  """
+  Parent organization
+  """
+  parentOrg: Organization!
+  """
+  Relation type of parentId
+  """
+  relationType: RelationTypeEnum!
+  """
+  Status of Tenant
+  """
+  status: StatusTypeEnum!
+  """
+  Tags for the account
+  """
+  tags: [Tags!]
+  """
+  Tenant associated with the client organization unit
+  """
+  tenant: Tenant!
+  """
+  Timestamp of last update
+  """
+  updatedAt: DateTime!
+  """
+  Identifier of the user who last updated the record
+  """
+  updatedBy: UUID!
+}
+
+"""
+Defines input fields for creating a client organization unit
+"""
+input CreateClientOrganizationUnitInput {
+  """
+  User belongs to Account Owner
+  """
+  accountOwnerId: UUID!
+  """
+  Unique identifier of the client organization unit
+  """
+  id: UUID!
+  """
+  Description of the client organization unit
+  """
+  description: String
+  """
+  Name of the client organization unit
+  """
+  name: String!
+  """
+  Parent organization ID
+  """
+  parentId: UUID!
+  """
+  Relation type of parentId
+  """
+  relationType: RelationTypeEnum!
+  """
+  Associated Tags Input
+  """
+  tags: [TagInput!]
+  """
+  Tenant ID
+  """
+  tenantId: UUID!
+}
+
+"""
+Defines input fields for updating a client organization unit
+"""
+input UpdateClientOrganizationUnitInput {
+  """
+  User belongs to Account Owner
+  """
+  accountOwnerId: UUID
+  """
+  Updated description of the client organization unit
+  """
+  description: String
+  """
+  Unique identifier of the client organization unit
+  """
+  id: UUID!
+  """
+  Updated name of the client organization unit
+  """
+  name: String
+  """
+  Updated parent organization ID
+  """
+  parentId: UUID
+  """
+  Relation type of parentId
+  """
+  relationType: RelationTypeEnum
+  """
+  Status of ClientOrganizationUnit
+  """
+  status: StatusTypeEnum
+  """
+  Associated Tags Input
+  """
+  tags: [TagInput!]
+  """
+  Updated tenant ID
+  """
+  tenantId: UUID
+}

@@ -1,0 +1,69 @@
+"""
+Represents a Root entity
+"""
+type Root implements Organization & Resource {
+  """
+  Timestamp of creation
+  """
+  createdAt: DateTime!
+  """
+  Identifier of the user who created the record
+  """
+  createdBy: UUID!
+  """
+  Description of the root
+  """
+  description: String
+  """
+  Unique identifier of the root
+  """
+  id: UUID!
+  """
+  Name of the root
+  """
+  name: String!
+  """
+  Parent organization
+  """
+  parentOrg: Organization
+  """
+  Timestamp of last update
+  """
+  updatedAt: DateTime!
+  """
+  Identifier of the user who last updated the record
+  """
+  updatedBy: UUID!
+}
+
+"""
+Defines input fields for creating a root
+"""
+input CreateRootInput {
+  """
+  Description of the root
+  """
+  description: String
+  """
+  Name of the root
+  """
+  name: String!
+}
+
+"""
+Defines input fields for updating a root
+"""
+input UpdateRootInput {
+  """
+  Updated description of the root
+  """
+  description: String
+  """
+  Unique identifier of the root
+  """
+  id: UUID!
+  """
+  Updated name of the root
+  """
+  name: String
+}

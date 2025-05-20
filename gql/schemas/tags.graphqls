@@ -1,0 +1,27 @@
+"""
+Represents a tag with a key-value pair
+"""
+type Tags {
+  """
+  Key of the tag
+  """
+  key: String!
+  """
+  Value of the tag
+  """
+  value: String!
+}
+
+"""
+Defines the input fields for a tag (key-value pair)
+"""
+input TagInput {
+  """
+  Key of the tag
+  """
+  key: String!
+  """
+  Value of the tag
+  """
+  value: String!
+}

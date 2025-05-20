@@ -1,0 +1,45 @@
+"""
+Represents a User entity
+"""
+type User implements Principal & Resource {
+  """
+  Timestamp of creation
+  """
+  createdAt: DateTime!
+  """
+  Identifier of the user who created the record
+  """
+  createdBy: UUID!
+  """
+  Email of the user
+  """
+  email: String!
+  """
+  First name of the user
+  """
+  firstName: String!
+  """
+  Unique identifier of the user
+  """
+  id: UUID!
+  """
+  Last name of the user
+  """
+  lastName: String!
+  """
+  Name of the user
+  """
+  name: String!
+  """
+  Tenant associated with the user
+  """
+  tenant: Tenant!
+  """
+  Timestamp of last update
+  """
+  updatedAt: DateTime!
+  """
+  Identifier of the user who last updated the record
+  """
+  updatedBy: UUID!
+}

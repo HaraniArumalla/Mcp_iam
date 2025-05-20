@@ -1,0 +1,121 @@
+kind: Deployment
+# Only used if autoscaling.enabled == false
+replicaCount: 1
+deploymentStrategy: RollingUpdate
+rollingUpdate:
+  maxUnavailable: "25%"
+  maxSurge: "25%"
+
+image:
+  pullPolicy: Always
+  tag: "{{ CI_REGISTRY_IMAGE }}/{{ CI_COMMIT_REF_SLUG }}:{{ CONTAINER_VERSION }}.{{CI_PIPELINE_IID}}"
+
+imagePullSecrets:
+  - name: {{ K8S_IMAGE_PULL_SECRET_NAME }}
+
+serviceAccountName: svc-k8s-cnv-dev02-dev001-azr-dev-wu2-admin
+
+env:
+  APP_NAME: {{ APP_NAME }}
+  ENVIRONMENT: {{ ENVIRONMENT }}
+  DB_HOST: {{ DB_HOST }}
+  DB_USERNAME: {{ DB_USERNAME }}
+  DB_PORT: {{ DB_PORT }}
+  DB_NAME: {{ DB_NAME }}
+  PERMIT_PDP_ENDPOINT: {{ PERMIT_PDP_ENDPOINT }}
+  PERMIT_PROJECT: {{ PERMIT_PROJECT }}
+  PERMIT_ENV: {{ PERMIT_ENV }}
+
+# Secret values
+secrets:
+  DB_PASSWORD: {{ DB_PASSWORD }}
+  JWT_SECRET_KEY: {{ JWT_SECRET_KEY }}
+  PERMIT_TOKEN: {{ PERMIT_TOKEN }}
+    
+
+appConf: |
+  
+service:
+  type: ClusterIP
+  ports:
+    - name: admin
+      containerPort: 8080
+      protocol: TCP
+      port: 8080
+
+resources:
+  limits:
+    cpu: 2
+    memory: 2Gi
+  requests:
+    cpu: 1
+    memory: 1Gi
+
+probes:
+  liveness:
+    path: /health/live
+    port: 8080
+    initialDelaySeconds: 400
+    periodSeconds: 10
+  readiness:
+    path: /health/ready
+    port: 8080
+    initialDelaySeconds: 240
+    periodSeconds: 2
+
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+    - labelSelector:
+        matchExpressions:
+        - key: instance
+          operator: In
+          values:
+          - {{ HELM_APP_NAME }}
+      topologyKey: kubernetes.io/hostname
+
+global:
+  platformType: CONDUCKTOR
+  namespace: {{ K8S_NS }}
+
+# Drives custom Label definitions - for more information on label usages see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+labels:
+  k8s.t-mobile.com/cmdb_app_id: {{ SNOW_APP_TAG }}
+  
+ingress:
+  enabled: true
+  annotations: 
+    external-dns.alpha.kubernetes.io/hostname: {{ HOSTNAME }}
+    external-dns.alpha.kubernetes.io/target: ""
+    kubernetes.io/ingress.class: nginx-internal
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+  hosts:
+    - host: {{ HOSTNAME }}
+      paths:
+        - path: /
+          service:
+            name: 
+            portName: admin 
+  secretName: {{ TLS_SECRET }}
+  # Add additional hosts as needed
+  # - host: another-host.example.com
+  #   paths:
+  #     - path: /
+  #       service:
+  #         name: another-service
+  #         port: 80
+
+autoscaling:
+  enabled: false
+  minReplicas: 3
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+appdynamics:
+  enabled: false
+  image: "harbor.geo.pks.t-mobile.com/appdynamics/nodejs-14-alpine:latest"
