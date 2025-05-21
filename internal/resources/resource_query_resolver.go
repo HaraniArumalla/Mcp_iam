@@ -2,12 +2,19 @@ package resources
 
 import (
 	"context"
+	"fmt"
 	"iam_services_main_v1/gql/models"
+	"iam_services_main_v1/helpers"
+	"iam_services_main_v1/internal/permit"
+
+	"iam_services_main_v1/pkg/logger"
 
 	"github.com/google/uuid"
 )
 
-type ResourceQueryResolver struct{}
+type ResourceQueryResolver struct {
+	PSC *permit.PermitSdkService
+}
 
 func (r *ResourceQueryResolver) Resource(ctx context.Context, id uuid.UUID) (models.OperationResult, error) {
 	// tenantID, _ := helpers.GetTenantID(ctx)
@@ -67,4 +74,41 @@ func (r *ResourceQueryResolver) Resources(ctx context.Context) (models.Operation
 
 	// return allResources, nil
 	return nil, nil
+}
+
+// CheckPermission is the resolver for the checkPermission field.
+func (r *ResourceQueryResolver) CheckPermission(ctx context.Context, input models.PermissionInput) (*models.PermissionResponse, error) {
+	// Get user ID from context (set by auth middleware)
+	userID, exists := ctx.Value("userID").(string)
+	if !exists {
+		logger.LogError("User ID not found in context during permission check")
+		return &models.PermissionResponse{
+			Allowed: false,
+			Error:   helpers.Ptr("User ID not found in context"),
+		}, nil
+	}
+
+	// Log the permission check request
+	logger.LogInfo("GraphQL permission check request",
+		"user_id", userID,
+		"action", input.Action,
+		"resource_type", input.ResourceType,
+		"resource_id", input.ResourceID,
+	)
+
+	// Check permission
+	allowed, err := r.PSC.Check(ctx, userID, input.Action, input.ResourceType, input.ResourceID, "Tenant")
+	if err != nil {
+		logger.LogError("Failed to check permissions", "error", err)
+		return &models.PermissionResponse{
+			Allowed: false,
+			Error:   helpers.Ptr(fmt.Sprintf("Failed to check permissions: %s", err.Error())),
+		}, nil
+	}
+
+	// Return result
+	return &models.PermissionResponse{
+		Allowed: allowed,
+		Error:   helpers.Ptr(""),
+	}, nil
 }

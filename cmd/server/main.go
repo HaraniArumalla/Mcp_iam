@@ -22,6 +22,8 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-gonic/gin"
+	permitsdkcfg "github.com/permitio/permit-golang/pkg/config"
+	permitsdk "github.com/permitio/permit-golang/pkg/permit"
 )
 
 // setupServer initializes and returns the configured gin router
@@ -58,7 +60,7 @@ func setupRoutes(router *gin.Engine) {
 	router.Use(middlewares.RequestLogger())
 	router.Use(middlewares.GinContextToContextMiddleware())
 	router.GET("/playground", gin.WrapH(playground.Handler("GraphQL playground", "/graphql")))
-	router.Use(middlewares.AuthMiddleware())
+	//router.Use(middlewares.AuthMiddleware())
 	router.POST("/graphql", graphqlHandler())
 }
 
@@ -74,8 +76,18 @@ func graphqlHandler() gin.HandlerFunc {
 	}
 
 	permitService := permit.NewPermitServiceImpl(permitclint)
+
+	// Initialize Permit SDK service
+	permitSdkService := initPermitSdkService()
+	if permitSdkService == nil {
+		logger.LogError("Failed to create Permit SDK service")
+		return func(c *gin.Context) {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Server configuration error"})
+		}
+	}
+
 	config := generated.Config{
-		Resolvers: &gql.Resolver{PC: permitService},
+		Resolvers: &gql.Resolver{PC: permitService, PSC: permitSdkService},
 	}
 
 	// Create handler using preferred constructor
@@ -200,4 +212,36 @@ func NewPermitClient() *permit.PermitClient {
 		},
 		Client: &http.Client{Transport: transport, Timeout: 30 * time.Second},
 	}
+}
+
+// Initialize the Permit.io client and service
+func initPermitSdkService() *permit.PermitSdkService {
+	apiKey := os.Getenv("PERMIT_TOKEN")
+	pdpUrl := os.Getenv("PERMIT_PDP_ENDPOINT")
+	if pdpUrl == "" || apiKey == "" {
+		logger.LogFatal("One or more required environment variables are not set")
+		return nil
+	}
+	// Create a custom HTTP client that skips TLS verification
+	customHttpClient := &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // Disable TLS cert verification
+		},
+	}
+
+	// Configure Permit client
+	permitConfig := permitsdkcfg.NewConfigBuilder(apiKey).
+		WithPdpUrl(pdpUrl).
+		WithHTTPClient(customHttpClient). // set the custom client
+		Build()
+
+	// Create permit client instance
+	permitClient := permitsdk.New(permitConfig)
+
+	// Create permit service
+	service := permit.NewPermitSdkService(permitClient)
+	logger.LogInfo("Permit.io service initialized")
+
+	return service
 }

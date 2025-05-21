@@ -289,6 +289,24 @@ input DeleteRoleInput {
   id: UUID!
 }
 
+# Input for permission check
+input PermissionInput {
+  # The action to check (e.g., "read", "write", "delete")
+  action: String!
+  # The type of resource (e.g., "document", "user", "project")
+  resourceType: String!
+  # The ID of the specific resource (optional)
+  resourceId: String!
+}
+
+# Response for permission check
+type PermissionResponse {
+  # Whether the permission is allowed
+  allowed: Boolean!
+  # Error message if any
+  error: String
+}
+
 """
 Root query type for fetching data
 """
@@ -322,6 +340,9 @@ type Query {
   Fetch all bindings.
   """
   bindings: OperationResult
+
+  # Check if a user has permission to perform an action on a resource
+  checkPermission(input: PermissionInput!): PermissionResponse!
 
   """
   Fetch a specific client organization unit by its ID.

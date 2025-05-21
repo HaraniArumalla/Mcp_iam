@@ -249,3 +249,7 @@ func GetUserAndTenantID(ctx context.Context) (*uuid.UUID, *uuid.UUID, error) {
 
 	return userID, tenantID, nil
 }
+
+func Ptr(s string) *string {
+	return &s
+}

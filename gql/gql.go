@@ -17,7 +17,8 @@ import (
 
 // Resolver holds references to the DB and acts as a central resolver
 type Resolver struct {
-	PC permit.PermitService
+	PC  permit.PermitService
+	PSC *permit.PermitSdkService
 }
 
 // Query returns the root query resolvers, delegating to feature-based resolvers
@@ -30,7 +31,7 @@ func (r *Resolver) Query() generated.QueryResolver {
 		RoleQueryResolver:                   &role.RoleQueryResolver{PC: r.PC},
 		PermissionQueryResolver:             &permissions.PermissionQueryResolver{},
 		BindingsQueryResolver:               &bindings.BindingsQueryResolver{PC: r.PC},
-		ResourceQueryResolver:               &resources.ResourceQueryResolver{},
+		ResourceQueryResolver:               &resources.ResourceQueryResolver{PSC: r.PSC},
 		GroupQueryResolver:                  &groups.GroupQueryResolver{},
 		OrganizationQueryResolver:           &organizations.OrganizationQueryResolver{},
 		RootQueryResolver:                   &root.RootQueryResolver{},
