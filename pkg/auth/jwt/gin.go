@@ -26,6 +26,13 @@ func (a *Authenticator) GinMiddleware() gin.HandlerFunc {
 			c.Set("userID", userID)
 		}
 
+		// This assumes that the tenant ID is passed in the header "X-Tenant-ID"
+		tenantID := c.GetHeader("X-Tenant-ID")
+
+		if tenantID != "" {
+			c.Set("tenantID", tenantID)
+		}
+
 		// Store all claims in context for additional use if needed
 		c.Set("claims", claims)
 		c.Next()

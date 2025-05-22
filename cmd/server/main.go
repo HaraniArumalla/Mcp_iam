@@ -60,7 +60,7 @@ func setupRoutes(router *gin.Engine) {
 	router.Use(middlewares.RequestLogger())
 	router.Use(middlewares.GinContextToContextMiddleware())
 	router.GET("/playground", gin.WrapH(playground.Handler("GraphQL playground", "/graphql")))
-	//router.Use(middlewares.AuthMiddleware())
+	router.Use(middlewares.AuthMiddleware())
 	router.POST("/graphql", graphqlHandler())
 }
 
