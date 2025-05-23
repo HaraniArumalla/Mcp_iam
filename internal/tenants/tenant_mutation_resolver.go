@@ -16,7 +16,8 @@ import (
 )
 
 type TenantMutationResolver struct {
-	PC permit.PermitService
+	PC  permit.PermitService
+	PSC *permit.PermitSdkService
 }
 
 // CreateTenant resolver for adding a new Tenant
@@ -61,6 +62,18 @@ func (t *TenantMutationResolver) UpdateTenant(ctx context.Context, input models.
 		err := errors.New("Tenant ID is required")
 		return utils.FormatErrorResponse(http.StatusBadRequest, "Tenant ID is required", err.Error()), nil
 	}
+	// Get user and tenant context
+	userID, tenantID, err := helpers.GetUserAndTenantID(ctx)
+	if err != nil {
+		return utils.FormatErrorResponse(http.StatusBadRequest, "User ID & Tenant ID not found in context", err.Error()), nil
+	}
+
+	// Check permission
+	_, err = t.PSC.Check(ctx, userID.String(), "updateTenant", config.TenantResourceTypeID, input.ID.String(), tenantID.String())
+	if err != nil {
+		return utils.FormatErrorResponse(http.StatusBadRequest, "User is not authorized to update the tenant", err.Error()), nil
+	}
+
 	// Fetch existing tenant data
 	existingTenant, err := t.getExistingTenant(ctx, input.ID)
 	if err != nil {
@@ -91,6 +104,17 @@ func (t *TenantMutationResolver) DeleteTenant(ctx context.Context, input models.
 	if input.ID == uuid.Nil {
 		err := errors.New("Tenant ID is required")
 		return utils.FormatErrorResponse(http.StatusBadRequest, "Tenant ID is required", err.Error()), nil
+	}
+	// Get user and tenant context
+	userID, tenantID, err := helpers.GetUserAndTenantID(ctx)
+	if err != nil {
+		return utils.FormatErrorResponse(http.StatusBadRequest, "User ID & Tenant ID not found in context", err.Error()), nil
+	}
+
+	// Check permission
+	_, err = t.PSC.Check(ctx, userID.String(), "updateTenant", config.TenantResourceTypeID, input.ID.String(), tenantID.String())
+	if err != nil {
+		return utils.FormatErrorResponse(http.StatusBadRequest, "User is not authorized to delete the tenant", err.Error()), nil
 	}
 	// Delete from permit
 	if _, err := t.PC.SendRequest(ctx, "DELETE", fmt.Sprintf("tenants/%s", input.ID), nil); err != nil {
