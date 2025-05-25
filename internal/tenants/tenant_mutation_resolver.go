@@ -72,8 +72,11 @@ func (t *TenantMutationResolver) CreateTenant(ctx context.Context, input models.
 
 // UpdateTenant resolver for updating a Tenant
 func (t *TenantMutationResolver) UpdateTenant(ctx context.Context, input models.UpdateTenantInput) (models.OperationResult, error) {
-	middlewares.AuthorizationMiddleware(t.PSC, "update", config.TenantResourceTypeID, input.ID.String())
+	_, err := middlewares.AuthorizationMiddleware(ctx, t.PSC, "update", config.TenantResourceTypeID, input.ID.String())
 
+	if err != nil {
+		return utils.FormatErrorResponse(http.StatusBadRequest, "User is not authorized to update the tenant", err.Error()), nil
+	}
 	if input.ID == uuid.Nil {
 		err := errors.New("Tenant ID is required")
 		return utils.FormatErrorResponse(http.StatusBadRequest, "Tenant ID is required", err.Error()), nil
