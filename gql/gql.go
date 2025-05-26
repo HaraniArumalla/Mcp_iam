@@ -25,9 +25,9 @@ type Resolver struct {
 func (r *Resolver) Query() generated.QueryResolver {
 	return &queryResolver{
 
-		TenantQueryResolver:                 &tenants.TenantQueryResolver{PC: r.PC},
-		AccountQueryResolver:                &accounts.AccountQueryResolver{PC: r.PC},
-		ClientOrganizationUnitQueryResolver: &clientorganizationunits.ClientOrganizationUnitQueryResolver{PC: r.PC},
+		TenantQueryResolver:                 &tenants.TenantQueryResolver{PC: r.PC, PSC: r.PSC},
+		AccountQueryResolver:                &accounts.AccountQueryResolver{PC: r.PC, PSC: r.PSC},
+		ClientOrganizationUnitQueryResolver: &clientorganizationunits.ClientOrganizationUnitQueryResolver{PC: r.PC, PSC: r.PSC},
 		RoleQueryResolver:                   &role.RoleQueryResolver{PC: r.PC},
 		PermissionQueryResolver:             &permissions.PermissionQueryResolver{},
 		BindingsQueryResolver:               &bindings.BindingsQueryResolver{PC: r.PC},
@@ -42,9 +42,9 @@ func (r *Resolver) Query() generated.QueryResolver {
 func (r *Resolver) Mutation() generated.MutationResolver {
 	return &mutationResolver{
 
-		AccountMutationResolver:                &accounts.AccountMutationResolver{PC: r.PC},
+		AccountMutationResolver:                &accounts.AccountMutationResolver{PC: r.PC, PSC: r.PSC},
 		TenantMutationResolver:                 &tenants.TenantMutationResolver{PC: r.PC, PSC: r.PSC},
-		ClientOrganizationUnitMutationResolver: &clientorganizationunits.ClientOrganizationUnitMutationResolver{PC: r.PC},
+		ClientOrganizationUnitMutationResolver: &clientorganizationunits.ClientOrganizationUnitMutationResolver{PC: r.PC, PSC: r.PSC},
 		RoleMutationResolver:                   &role.RoleMutationResolver{PC: r.PC},
 		PermissionMutationResolver:             &permissions.PermissionMutationResolver{},
 		BindingsMutationResolver:               &bindings.BindingsMutationResolver{PC: r.PC},

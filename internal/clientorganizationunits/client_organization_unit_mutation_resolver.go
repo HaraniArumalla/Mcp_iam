@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"iam_services_main_v1/config"
 	"iam_services_main_v1/gql/models"
 	"iam_services_main_v1/helpers"
 	constants "iam_services_main_v1/internal/constants"
+	"iam_services_main_v1/internal/middlewares"
 	"iam_services_main_v1/internal/permit"
 	"net/http"
 	"time"
@@ -17,7 +19,8 @@ import (
 )
 
 type ClientOrganizationUnitMutationResolver struct {
-	PC permit.PermitService
+	PC  permit.PermitService
+	PSC *permit.PermitSdkService
 }
 
 func (r *ClientOrganizationUnitMutationResolver) CreateClientOrganizationUnit(ctx context.Context, input models.CreateClientOrganizationUnitInput) (models.OperationResult, error) {
@@ -83,6 +86,11 @@ func (r *ClientOrganizationUnitMutationResolver) CreateClientOrganizationUnit(ct
 }
 
 func (r *ClientOrganizationUnitMutationResolver) UpdateClientOrganizationUnit(ctx context.Context, input models.UpdateClientOrganizationUnitInput) (models.OperationResult, error) {
+	_, err := middlewares.AuthorizationMiddleware(ctx, r.PSC, "update", config.ClientOrgUnitResourceTypeID, input.ID.String())
+
+	if err != nil {
+		return buildErrorResponse(400, "User is not authorized to update the client org", "User is not authorized to update the client org"), nil
+	}
 	logger := log.WithContext(ctx).WithFields(log.Fields{
 		"className":  "client_organization_mutation_resolver",
 		"methodName": "UpdateClientOrganizationUnit",
@@ -148,6 +156,11 @@ func (r *ClientOrganizationUnitMutationResolver) UpdateClientOrganizationUnit(ct
 }
 
 func (r *ClientOrganizationUnitMutationResolver) DeleteClientOrganizationUnit(ctx context.Context, input models.DeleteInput) (models.OperationResult, error) {
+	_, err := middlewares.AuthorizationMiddleware(ctx, r.PSC, "delete", config.ClientOrgUnitResourceTypeID, input.ID.String())
+
+	if err != nil {
+		return buildErrorResponse(400, "User is not authorized to delete client org", "User is not authorized to delete client org"), nil
+	}
 	logger := log.WithContext(ctx).WithFields(log.Fields{
 		"className":  "client_organization_mutation_resolver",
 		"methodName": "DeleteClientOrganizationUnit",
@@ -161,7 +174,7 @@ func (r *ClientOrganizationUnitMutationResolver) DeleteClientOrganizationUnit(ct
 	logger.Info("delete client organization request received")
 	url := fmt.Sprintf(constants.PERMIT_RESOURCE_INSTANCES+"/%s", input.ID)
 
-	_, err := r.PC.APIExecute(ctx, constants.DELETE, url, nil)
+	_, err = r.PC.APIExecute(ctx, constants.DELETE, url, nil)
 	if err != nil {
 		// do we need to rever in our database too?
 		return buildErrorResponse(http.StatusBadRequest, err.Error(), "unable to delete organization in permit"), nil

@@ -108,6 +108,11 @@ func (t *TenantMutationResolver) UpdateTenant(ctx context.Context, input models.
 
 // DeleteTenant resolver for deleting a Tenant
 func (t *TenantMutationResolver) DeleteTenant(ctx context.Context, input models.DeleteInput) (models.OperationResult, error) {
+	_, err := middlewares.AuthorizationMiddleware(ctx, t.PSC, "delete", config.TenantResourceTypeID, input.ID.String())
+
+	if err != nil {
+		return utils.FormatErrorResponse(http.StatusBadRequest, "User is not authorized to delete the tenant", err.Error()), nil
+	}
 	// Check if ID is provided
 	if input.ID == uuid.Nil {
 		err := errors.New("Tenant ID is required")
