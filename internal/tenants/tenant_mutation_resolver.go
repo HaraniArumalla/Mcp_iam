@@ -144,12 +144,13 @@ func (t *TenantMutationResolver) prepareMetadata(ctx context.Context, input mode
 		return nil, err
 	}
 	metadata := map[string]interface{}{
-		"id":          input.ID,
-		"name":        input.Name,
-		"description": input.Description,
-		"createdBy":   userID,
-		"updatedBy":   userID,
-		"status":      "ACTIVE", // Set default status to ACTIVE for new tenants
+		"id":             input.ID,
+		"name":           input.Name,
+		"description":    input.Description,
+		"createdBy":      userID,
+		"updatedBy":      userID,
+		"accountOwnerId": input.AccountOwnerID,
+		"status":         "ACTIVE", // Set default status to ACTIVE for new tenants
 		"contactInfo": map[string]interface{}{
 			"email":       input.ContactInfo.Email,
 			"phoneNumber": input.ContactInfo.PhoneNumber,
