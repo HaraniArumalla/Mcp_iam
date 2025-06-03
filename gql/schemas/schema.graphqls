@@ -296,7 +296,7 @@ input PermissionInput {
   # The type of resource (e.g., "document", "user", "project")
   resourceType: String!
   # The ID of the specific resource (optional)
-  resourceId: String!
+  resourceId: String
 }
 
 # Response for permission check

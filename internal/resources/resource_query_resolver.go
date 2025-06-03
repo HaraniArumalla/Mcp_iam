@@ -79,7 +79,7 @@ func (r *ResourceQueryResolver) Resources(ctx context.Context) (models.Operation
 // CheckPermission is the resolver for the checkPermission field.
 func (r *ResourceQueryResolver) CheckPermission(ctx context.Context, input models.PermissionInput) (*models.PermissionResponse, error) {
 	// Get user and tenant context
-	userID, _, err := helpers.GetUserAndTenantID(ctx)
+	userID, tenantID, err := helpers.GetUserAndTenantID(ctx)
 	if err != nil {
 		logger.LogError("User ID not found in context during permission check")
 		return &models.PermissionResponse{
@@ -87,17 +87,22 @@ func (r *ResourceQueryResolver) CheckPermission(ctx context.Context, input model
 			Error:   helpers.Ptr("User ID & Tenant ID not found in context"),
 		}, nil
 	}
+	// Check permission
+	resourceID := ""
+	if input.ResourceID != nil {
+		resourceID = *input.ResourceID
+	}
 
 	// Log the permission check request
 	logger.LogInfo("GraphQL permission check request",
 		"user_id", userID,
 		"action", input.Action,
 		"resource_type", input.ResourceType,
-		"resource_id", input.ResourceID,
+		"resource_id", resourceID,
 	)
 
 	// Check permission
-	allowed, err := r.PSC.Check(ctx, userID.String(), input.Action, input.ResourceType, input.ResourceID, "Tenant")
+	allowed, err := r.PSC.Check(ctx, userID.String(), input.Action, input.ResourceType, resourceID, tenantID.String())
 	if err != nil {
 		logger.LogError("Failed to check permissions", "error", err)
 		return &models.PermissionResponse{
