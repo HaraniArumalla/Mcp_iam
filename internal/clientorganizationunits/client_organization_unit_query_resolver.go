@@ -7,7 +7,6 @@ import (
 	"iam_services_main_v1/gql/models"
 	"iam_services_main_v1/helpers"
 	constants "iam_services_main_v1/internal/constants"
-	"iam_services_main_v1/internal/middlewares"
 	"iam_services_main_v1/internal/permit"
 	tag_helper "iam_services_main_v1/internal/tags"
 	"net/http"
@@ -23,17 +22,12 @@ type ClientOrganizationUnitQueryResolver struct {
 }
 
 func (r *ClientOrganizationUnitQueryResolver) ClientOrganizationUnit(ctx context.Context, id uuid.UUID) (models.OperationResult, error) {
-	_, err := middlewares.AuthorizationMiddleware(ctx, r.PSC, "getbyid", config.ClientOrgUnitResourceTypeID, id.String())
-
-	if err != nil {
-		return buildErrorResponse(400, "User is not authorized to get the client org details by id", "User is not authorized to get the client org details by id"), nil
-	}
 	logger := log.WithContext(ctx).WithFields(log.Fields{
 		"className":  "organization_query_resolver",
 		"methodName": "AllOrganizations",
 	})
 
-	_, err = helpers.GetTenantID(ctx)
+	_, err := helpers.GetTenantID(ctx)
 	if err != nil {
 		logger.Error("unable to fetch tenantID")
 		return buildErrorResponse(400, "unable to find tenantid", "tenantId is not present in header"), nil

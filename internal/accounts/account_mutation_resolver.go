@@ -6,7 +6,6 @@ import (
 	"iam_services_main_v1/config"
 	"iam_services_main_v1/gql/models"
 	"iam_services_main_v1/helpers"
-	"iam_services_main_v1/internal/middlewares"
 	"iam_services_main_v1/internal/permit"
 	"iam_services_main_v1/internal/utils"
 	"iam_services_main_v1/pkg/logger"
@@ -19,8 +18,7 @@ import (
 
 // AccountMutationResolver handles GraphQL mutations for account-related operations using GORM DB and Permit client
 type AccountMutationResolver struct {
-	PC  permit.PermitService
-	PSC *permit.PermitSdkService
+	PC permit.PermitService
 }
 
 // CreateAccount creates a new account based on the provided input.
@@ -87,11 +85,6 @@ func (r *AccountMutationResolver) CreateAccount(ctx context.Context, input model
 // Returns a formatted success response with empty data array if successful,
 // or a formatted error if any step fails.
 func (r *AccountMutationResolver) UpdateAccount(ctx context.Context, input models.UpdateAccountInput) (models.OperationResult, error) {
-	_, err := middlewares.AuthorizationMiddleware(ctx, r.PSC, "update", config.AccountResourceTypeID, input.ID.String())
-
-	if err != nil {
-		return utils.FormatErrorResponse(http.StatusBadRequest, "User is not authorized to update the account", err.Error()), nil
-	}
 	logger.LogInfo("Started the update account operation")
 
 	// Fetch existing account data
@@ -133,15 +126,10 @@ func (r *AccountMutationResolver) UpdateAccount(ctx context.Context, input model
 //
 // Note: This function performs a soft delete by updating the RowStatus rather than removing records
 func (r *AccountMutationResolver) DeleteAccount(ctx context.Context, input models.DeleteInput) (models.OperationResult, error) {
-	_, err := middlewares.AuthorizationMiddleware(ctx, r.PSC, "delete", config.AccountResourceTypeID, input.ID.String())
-
-	if err != nil {
-		return utils.FormatErrorResponse(http.StatusBadRequest, "User is not authorized to delete the account", err.Error()), nil
-	}
 	logger.LogInfo("Started the delete account operation")
 
 	// Delete the resource instance from Permit
-	_, err = r.PC.SendRequest(ctx, "DELETE", fmt.Sprintf("resource_instances/%s", input.ID), map[string]interface{}{})
+	_, err := r.PC.SendRequest(ctx, "DELETE", fmt.Sprintf("resource_instances/%s", input.ID), map[string]interface{}{})
 	if err != nil {
 		return utils.FormatErrorResponse(http.StatusBadRequest, "Failed to delete account in Permit", err.Error()), nil
 	}

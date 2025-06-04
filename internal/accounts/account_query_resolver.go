@@ -6,7 +6,6 @@ import (
 	"iam_services_main_v1/config"
 	"iam_services_main_v1/gql/models"
 	"iam_services_main_v1/helpers"
-	"iam_services_main_v1/internal/middlewares"
 	"iam_services_main_v1/internal/permit"
 	"iam_services_main_v1/internal/utils"
 	"iam_services_main_v1/pkg/logger"
@@ -17,8 +16,7 @@ import (
 
 // AccountQueryResolver handles database queries and permission checks for account-related operations using GORM and Permit.io client
 type AccountQueryResolver struct {
-	PC  permit.PermitService
-	PSC *permit.PermitSdkService
+	PC permit.PermitService
 }
 
 // Accounts retrieves all account resources for a given tenant.
@@ -72,15 +70,10 @@ func (r *AccountQueryResolver) Accounts(ctx context.Context) (models.OperationRe
 //
 // Any errors during these operations are logged and returned as formatted error responses.
 func (r *AccountQueryResolver) Account(ctx context.Context, id uuid.UUID) (models.OperationResult, error) {
-	_, err := middlewares.AuthorizationMiddleware(ctx, r.PSC, "getbyid", config.AccountResourceTypeID, id.String())
-
-	if err != nil {
-		return utils.FormatErrorResponse(http.StatusBadRequest, "User is not authorized to account", err.Error()), nil
-	}
 	logger.LogInfo("Fetching account by ID", "id", id)
 
 	// Get tenant ID from context
-	_, err = helpers.GetTenantID(ctx)
+	_, err := helpers.GetTenantID(ctx)
 	if err != nil {
 		return utils.FormatErrorResponse(http.StatusBadRequest, "Failed to get tenant ID", err.Error()), nil
 	}
