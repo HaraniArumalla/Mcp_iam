@@ -166,6 +166,9 @@ func main() {
 	}
 	logger.LogInfo("Environment variables loaded successfully")
 
+	logger.LogInfo("Permit configuration:", os.Getenv("PERMIT_PDP_ENDPOINT"),
+		os.Getenv("PERMIT_PROJECT"),
+		os.Getenv("PERMIT_ENV"), os.Getenv("PERMIT_TOKEN"))
 	// Start the server
 	srv, err := runServer()
 	if err != nil {
@@ -217,7 +220,7 @@ func NewPermitClient() *permit.PermitClient {
 // Initialize the Permit.io client and service
 func initPermitSdkService() *permit.PermitSdkService {
 	apiKey := os.Getenv("PERMIT_TOKEN")
-	pdpUrl := os.Getenv("PERMIT_PDP_ENDPOINT")
+	pdpUrl := os.Getenv("PERMIT_PDP_URL")
 	if pdpUrl == "" || apiKey == "" {
 		logger.LogFatal("One or more required environment variables are not set")
 		return nil
