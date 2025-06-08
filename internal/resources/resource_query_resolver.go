@@ -6,6 +6,7 @@ import (
 	"iam_services_main_v1/gql/models"
 	"iam_services_main_v1/helpers"
 	"iam_services_main_v1/internal/permit"
+	"strings"
 
 	"iam_services_main_v1/pkg/logger"
 
@@ -87,10 +88,21 @@ func (r *ResourceQueryResolver) CheckPermission(ctx context.Context, input model
 			Error:   helpers.Ptr("User ID & Tenant ID not found in context"),
 		}, nil
 	}
+	// Validate input.Action
+	if input.Action == "" {
+		return &models.PermissionResponse{
+			Allowed: false,
+			Error:   helpers.Ptr("Action cannot be empty"),
+		}, nil
+	}
 	// Check permission
 	resourceID := ""
 	if input.ResourceID != nil {
 		resourceID = *input.ResourceID
+	}
+	// Check if input.Action contains "create"
+	if strings.Contains(input.Action, "create") {
+		resourceID = ""
 	}
 
 	// Log the permission check request

@@ -292,6 +292,7 @@ func TestGraphQLHandler(t *testing.T) {
 	// Set environment variables for testing
 	originalEnv := map[string]string{
 		"PERMIT_PDP_ENDPOINT": os.Getenv("PERMIT_PDP_ENDPOINT"),
+		"PERMIT_PDP_URL":      os.Getenv("PERMIT_PDP_URL"),
 		"PERMIT_PROJECT":      os.Getenv("PERMIT_PROJECT"),
 		"PERMIT_ENV":          os.Getenv("PERMIT_ENV"),
 		"PERMIT_TOKEN":        os.Getenv("PERMIT_TOKEN"),
@@ -309,6 +310,9 @@ func TestGraphQLHandler(t *testing.T) {
 	// Set test environment variables
 	if err := os.Setenv("PERMIT_PDP_ENDPOINT", "http://localhost:8000"); err != nil {
 		t.Fatalf("Failed to set PERMIT_PDP_ENDPOINT: %v", err)
+	}
+	if err := os.Setenv("PERMIT_PDP_URL", "http://localhost:8000"); err != nil {
+		t.Fatalf("Failed to set PERMIT_PDP_URL: %v", err)
 	}
 	if err := os.Setenv("PERMIT_PROJECT", "test-project"); err != nil {
 		t.Fatalf("Failed to set PERMIT_PROJECT: %v", err)
