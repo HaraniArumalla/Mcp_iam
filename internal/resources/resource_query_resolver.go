@@ -101,7 +101,7 @@ func (r *ResourceQueryResolver) CheckPermission(ctx context.Context, input model
 		resourceID = *input.ResourceID
 	}
 	// Check if input.Action contains "create"
-	if strings.Contains(input.Action, "create") {
+	if strings.Contains(strings.ToLower(input.Action), "create") {
 		resourceID = ""
 	}
 

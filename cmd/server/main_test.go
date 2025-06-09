@@ -288,8 +288,18 @@ func TestRunServer(t *testing.T) {
 	assert.NoError(t, srv.Shutdown(ctx))
 }
 
-func TestGraphQLHandler(t *testing.T) {
-	// Set environment variables for testing
+// Constants for test configuration
+const (
+	testPermitPdpURL      = "http://localhost:8000" // Use a consistent value for tests
+	testPermitPdpEndpoint = "http://localhost:8000"
+	testPermitProject     = "test-project"
+	testPermitEnv         = "test-env"
+	testPermitToken       = "test-token"
+)
+
+// Helper function to set up test environment variables
+func setupTestEnv(t *testing.T) func() {
+	// Store original values
 	originalEnv := map[string]string{
 		"PERMIT_PDP_ENDPOINT": os.Getenv("PERMIT_PDP_ENDPOINT"),
 		"PERMIT_PDP_URL":      os.Getenv("PERMIT_PDP_URL"),
@@ -298,31 +308,35 @@ func TestGraphQLHandler(t *testing.T) {
 		"PERMIT_TOKEN":        os.Getenv("PERMIT_TOKEN"),
 	}
 
-	defer func() {
-		// Restore original environment variables
+	// Set test environment variables
+	envVars := map[string]string{
+		"PERMIT_PDP_ENDPOINT": testPermitPdpEndpoint,
+		"PERMIT_PDP_URL":      testPermitPdpURL,
+		"PERMIT_PROJECT":      testPermitProject,
+		"PERMIT_ENV":          testPermitEnv,
+		"PERMIT_TOKEN":        testPermitToken,
+	}
+
+	for key, value := range envVars {
+		if err := os.Setenv(key, value); err != nil {
+			t.Fatalf("Failed to set environment variable %s: %v", key, err)
+		}
+	}
+
+	// Return cleanup function
+	return func() {
 		for key, value := range originalEnv {
 			if err := os.Setenv(key, value); err != nil {
 				t.Logf("Failed to restore environment variable %s: %v", key, err)
 			}
 		}
-	}()
+	}
+}
 
-	// Set test environment variables
-	if err := os.Setenv("PERMIT_PDP_ENDPOINT", "http://localhost:8000"); err != nil {
-		t.Fatalf("Failed to set PERMIT_PDP_ENDPOINT: %v", err)
-	}
-	if err := os.Setenv("PERMIT_PDP_URL", "http://localhost:8000"); err != nil {
-		t.Fatalf("Failed to set PERMIT_PDP_URL: %v", err)
-	}
-	if err := os.Setenv("PERMIT_PROJECT", "test-project"); err != nil {
-		t.Fatalf("Failed to set PERMIT_PROJECT: %v", err)
-	}
-	if err := os.Setenv("PERMIT_ENV", "test-env"); err != nil {
-		t.Fatalf("Failed to set PERMIT_ENV: %v", err)
-	}
-	if err := os.Setenv("PERMIT_TOKEN", "test-token"); err != nil {
-		t.Fatalf("Failed to set PERMIT_TOKEN: %v", err)
-	}
+func TestGraphQLHandler(t *testing.T) {
+	// Setup test environment and get cleanup function
+	cleanup := setupTestEnv(t)
+	defer cleanup()
 
 	// Test the handler
 	handlerFunc := graphqlHandler()
