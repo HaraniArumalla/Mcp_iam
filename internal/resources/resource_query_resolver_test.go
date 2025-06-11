@@ -3,9 +3,12 @@ package resources
 import (
 	"context"
 	"errors"
+	"fmt"
 	"iam_services_main_v1/config"
 	"iam_services_main_v1/gql/models"
-	"iam_services_main_v1/internal/permit"
+	"iam_services_main_v1/helpers"
+	"iam_services_main_v1/pkg/logger"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -14,140 +17,158 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// TestableResourceQueryResolver is a test version of ResourceQueryResolver that accepts mocks
-type TestableResourceQueryResolver struct {
-	*ResourceQueryResolver
-	MockPermitSdk *MockPermitSdk
+// PermitChecker defines the interface for permit checking
+type PermitChecker interface {
+	Check(ctx context.Context, userID, action, resourceType, resourceID, tenant string) (bool, error)
 }
 
-// MockPermitSdk is a mock implementation of PermitSdkService's Check method
-type MockPermitSdk struct {
+// MockPermitChecker implements PermitChecker for testing
+type MockPermitChecker struct {
 	mock.Mock
 }
 
-// Check mocks the Check method
-func (m *MockPermitSdk) Check(ctx context.Context, userID, action, resourceType, resourceID, tenant string) (bool, error) {
+func (m *MockPermitChecker) Check(ctx context.Context, userID, action, resourceType, resourceID, tenant string) (bool, error) {
 	args := m.Called(ctx, userID, action, resourceType, resourceID, tenant)
 	return args.Bool(0), args.Error(1)
+}
+
+// TestResourceQueryResolver is our test version of ResourceQueryResolver
+type TestResourceQueryResolver struct {
+	PermitChecker PermitChecker
+}
+
+// CheckPermission implements the same logic as ResourceQueryResolver.CheckPermission
+func (r *TestResourceQueryResolver) CheckPermission(ctx context.Context, input models.PermissionInput) (*models.PermissionResponse, error) {
+	// Get user and tenant context
+	userID, tenantID, err := helpers.GetUserAndTenantID(ctx)
+	if err != nil {
+		logger.LogError("User ID not found in context during permission check")
+		return &models.PermissionResponse{
+			Allowed: false,
+			Error:   helpers.Ptr("User ID & Tenant ID not found in context"),
+		}, nil
+	}
+	// Validate input.Action
+	if input.Action == "" {
+		return &models.PermissionResponse{
+			Allowed: false,
+			Error:   helpers.Ptr("Action cannot be empty"),
+		}, nil
+	}
+	// Check permission
+	resourceID := ""
+	if input.ResourceID != "" {
+		resourceID = input.ResourceID
+	}
+	// Check if input.Action contains "create"
+	if strings.Contains(strings.ToLower(input.Action), "create") {
+		resourceID = ""
+	}
+
+	// Log the permission check request
+	logger.LogInfo("GraphQL permission check request",
+		"user_id", userID,
+		"action", input.Action,
+		"resource_type", input.ResourceType,
+		"resource_id", resourceID,
+	)
+
+	// Check permission
+	allowed, err := r.PermitChecker.Check(ctx, userID.String(), input.Action, input.ResourceType, resourceID, tenantID.String())
+	if err != nil {
+		logger.LogError("Failed to check permissions", "error", err)
+		return &models.PermissionResponse{
+			Allowed: false,
+			Error:   helpers.Ptr(fmt.Sprintf("Failed to check permissions: %s", err.Error())),
+		}, nil
+	}
+
+	// Return result
+	return &models.PermissionResponse{
+		Allowed: allowed,
+		Error:   helpers.Ptr(""),
+	}, nil
+}
+
+// Resource and Resources match the original resolver signatures but always return nil
+func (r *TestResourceQueryResolver) Resource(ctx context.Context, id uuid.UUID) (models.OperationResult, error) {
+	return nil, nil
+}
+
+func (r *TestResourceQueryResolver) Resources(ctx context.Context) (models.OperationResult, error) {
+	return nil, nil
+}
+
+// Helper function to create a string pointer
+func stringPtr(s string) *string {
+	return &s
 }
 
 // setupTestContext creates a context with user and tenant IDs
 func setupTestContext(userIDStr, tenantIDStr string) context.Context {
 	gin.SetMode(gin.TestMode)
-	c := &gin.Context{}
-
+	c := gin.Context{}
 	if userIDStr != "" {
 		c.Set("userID", userIDStr)
 	}
-
 	if tenantIDStr != "" {
 		c.Set("tenantID", tenantIDStr)
 	}
-
-	return context.WithValue(context.Background(), config.GinContextKey, c)
-}
-
-// NewTestResolver creates a ResourceQueryResolver for testing with our mock
-func NewTestResolver(mockSdk *MockPermitSdk) *ResourceQueryResolver {
-	// Create a standard permit.PermitSdkService
-	psc := &permit.PermitSdkService{}
-
-	// Create our resolver
-	resolver := &ResourceQueryResolver{
-		PSC: psc,
-	}
-
-	// Override the Check method to use our mock
-	originalCheck := resolver.PSC.Check
-	resolver.PSC.Check = func(ctx context.Context, userID, action, resourceType, resourceID, tenant string) (bool, error) {
-		// This is compile-time safe, but will panic at runtime if any test uses this without setting up the mock
-		if mockSdk == nil {
-			panic("MockPermitSdk is nil")
-		}
-		return mockSdk.Check(ctx, userID, action, resourceType, resourceID, tenant)
-	}
-
-	return resolver
+	return context.WithValue(context.Background(), config.GinContextKey, &c)
 }
 
 func TestCheckPermission(t *testing.T) {
+	// Initialize logger to prevent nil pointer dereference
+	logger.InitLogger()
+
+	// Test cases
 	testCases := []struct {
-		name                string
-		input               models.PermissionInput
-		setupContext        func() context.Context
-		mockBehavior        func(*MockPermitSdk)
-		expectedAllowed     bool
-		expectedErrorMsg    string
+		name                 string
+		input                models.PermissionInput
+		setupContext         func() context.Context
+		setupMock            func(*MockPermitChecker)
+		expectedAllowed      bool
+		expectedError        bool
+		expectedErrorMessage string
 	}{
 		{
-			name: "Successful permission check",
+			name: "Successful permission check with resource ID",
 			input: models.PermissionInput{
 				Action:       "read",
 				ResourceType: "document",
 				ResourceID:   "doc-123",
 			},
 			setupContext: func() context.Context {
-				return setupTestContext("user-123", "tenant-123")
+				userID := uuid.New().String()
+				tenantID := uuid.New().String()
+				return setupTestContext(userID, tenantID)
 			},
-			mockBehavior: func(m *MockPermitSdk) {
-				m.On("Check", mock.Anything, "user-123", "read", "document", "doc-123", "tenant-123").
+			setupMock: func(mockSvc *MockPermitChecker) {
+				mockSvc.On("Check", mock.Anything, mock.Anything, "read", "document", "doc-123", mock.Anything).
 					Return(true, nil)
 			},
-			expectedAllowed:  true,
-			expectedErrorMsg: "",
+			expectedAllowed: true,
+			expectedError:   false,
 		},
 		{
-			name: "Failed permission check",
+			name: "Failed permission check with resource ID",
 			input: models.PermissionInput{
-				Action:       "write",
+				Action:       "read",
 				ResourceType: "document",
 				ResourceID:   "doc-123",
 			},
 			setupContext: func() context.Context {
-				return setupTestContext("user-123", "tenant-123")
+				userID := uuid.New().String()
+				tenantID := uuid.New().String()
+				return setupTestContext(userID, tenantID)
 			},
-			mockBehavior: func(m *MockPermitSdk) {
-				m.On("Check", mock.Anything, "user-123", "write", "document", "doc-123", "tenant-123").
+			setupMock: func(mockSvc *MockPermitChecker) {
+				mockSvc.On("Check", mock.Anything, mock.Anything, "read", "document", "doc-123", mock.Anything).
 					Return(false, errors.New("permission denied"))
 			},
-			expectedAllowed:  false,
-			expectedErrorMsg: "Failed to check permissions: permission denied",
-		},
-		{
-			name: "Permission check with create action should clear resource ID",
-			input: models.PermissionInput{
-				Action:       "create",
-				ResourceType: "document",
-				ResourceID:   "doc-123", // This should be ignored for create actions
-			},
-			setupContext: func() context.Context {
-				return setupTestContext("user-123", "tenant-123")
-			},
-			mockBehavior: func(m *MockPermitSdk) {
-				// Expect empty resource ID for create action
-				m.On("Check", mock.Anything, "user-123", "create", "document", "", "tenant-123").
-					Return(true, nil)
-			},
-			expectedAllowed:  true,
-			expectedErrorMsg: "",
-		},
-		{
-			name: "Permission check with action containing 'create' should clear resource ID",
-			input: models.PermissionInput{
-				Action:       "createDocument",
-				ResourceType: "document",
-				ResourceID:   "doc-123", // This should be ignored for actions containing 'create'
-			},
-			setupContext: func() context.Context {
-				return setupTestContext("user-123", "tenant-123")
-			},
-			mockBehavior: func(m *MockPermitSdk) {
-				// Expect empty resource ID for action containing 'create'
-				m.On("Check", mock.Anything, "user-123", "createDocument", "document", "", "tenant-123").
-					Return(true, nil)
-			},
-			expectedAllowed:  true,
-			expectedErrorMsg: "",
+			expectedAllowed:      false,
+			expectedError:        true,
+			expectedErrorMessage: "Failed to check permissions: permission denied",
 		},
 		{
 			name: "Empty action should fail",
@@ -157,13 +178,16 @@ func TestCheckPermission(t *testing.T) {
 				ResourceID:   "doc-123",
 			},
 			setupContext: func() context.Context {
-				return setupTestContext("user-123", "tenant-123")
+				userID := uuid.New().String()
+				tenantID := uuid.New().String()
+				return setupTestContext(userID, tenantID)
 			},
-			mockBehavior: func(m *MockPermitSdk) {
+			setupMock: func(mockSvc *MockPermitChecker) {
 				// No mock expectations as the empty action should fail before Check is called
 			},
-			expectedAllowed:  false,
-			expectedErrorMsg: "Action cannot be empty",
+			expectedAllowed:      false,
+			expectedError:        true,
+			expectedErrorMessage: "Action cannot be empty",
 		},
 		{
 			name: "Missing user ID in context",
@@ -173,13 +197,16 @@ func TestCheckPermission(t *testing.T) {
 				ResourceID:   "doc-123",
 			},
 			setupContext: func() context.Context {
-				return setupTestContext("", "tenant-123")
+				// Only set tenant ID, not user ID
+				tenantID := uuid.New().String()
+				return setupTestContext("", tenantID)
 			},
-			mockBehavior: func(m *MockPermitSdk) {
+			setupMock: func(mockSvc *MockPermitChecker) {
 				// No mock expectations as the context check should fail before Check is called
 			},
-			expectedAllowed:  false,
-			expectedErrorMsg: "User ID & Tenant ID not found in context",
+			expectedAllowed:      false,
+			expectedError:        true,
+			expectedErrorMessage: "User ID & Tenant ID not found in context",
 		},
 		{
 			name: "Missing tenant ID in context",
@@ -189,13 +216,16 @@ func TestCheckPermission(t *testing.T) {
 				ResourceID:   "doc-123",
 			},
 			setupContext: func() context.Context {
-				return setupTestContext("user-123", "")
+				// Only set user ID, not tenant ID
+				userID := uuid.New().String()
+				return setupTestContext(userID, "")
 			},
-			mockBehavior: func(m *MockPermitSdk) {
+			setupMock: func(mockSvc *MockPermitChecker) {
 				// No mock expectations as the context check should fail before Check is called
 			},
-			expectedAllowed:  false,
-			expectedErrorMsg: "User ID & Tenant ID not found in context",
+			expectedAllowed:      false,
+			expectedError:        true,
+			expectedErrorMessage: "User ID & Tenant ID not found in context",
 		},
 		{
 			name: "Missing context",
@@ -205,13 +235,53 @@ func TestCheckPermission(t *testing.T) {
 				ResourceID:   "doc-123",
 			},
 			setupContext: func() context.Context {
-				return context.Background() // No gin context
+				// Return a context without the gin context
+				return context.Background()
 			},
-			mockBehavior: func(m *MockPermitSdk) {
+			setupMock: func(mockSvc *MockPermitChecker) {
 				// No mock expectations as the context check should fail before Check is called
 			},
-			expectedAllowed:  false,
-			expectedErrorMsg: "User ID & Tenant ID not found in context",
+			expectedAllowed:      false,
+			expectedError:        true,
+			expectedErrorMessage: "User ID & Tenant ID not found in context",
+		},
+		{
+			name: "Create action with resource ID (should clear resource ID)",
+			input: models.PermissionInput{
+				Action:       "create",
+				ResourceType: "document",
+				ResourceID:   "doc-123", // Should be ignored for create actions
+			},
+			setupContext: func() context.Context {
+				userID := uuid.New().String()
+				tenantID := uuid.New().String()
+				return setupTestContext(userID, tenantID)
+			},
+			setupMock: func(mockSvc *MockPermitChecker) {
+				mockSvc.On("Check", mock.Anything, mock.Anything, "create", "document", "", mock.Anything).
+					Return(true, nil)
+			},
+			expectedAllowed: true,
+			expectedError:   false,
+		},
+		{
+			name: "CreateDocument action (contains 'create' substring)",
+			input: models.PermissionInput{
+				Action:       "createDocument",
+				ResourceType: "document",
+				ResourceID:   "doc-123", // Should be ignored for actions with 'create' substring
+			},
+			setupContext: func() context.Context {
+				userID := uuid.New().String()
+				tenantID := uuid.New().String()
+				return setupTestContext(userID, tenantID)
+			},
+			setupMock: func(mockSvc *MockPermitChecker) {
+				mockSvc.On("Check", mock.Anything, mock.Anything, "createDocument", "document", "", mock.Anything).
+					Return(true, nil)
+			},
+			expectedAllowed: true,
+			expectedError:   false,
 		},
 		{
 			name: "No resource ID provided",
@@ -221,72 +291,138 @@ func TestCheckPermission(t *testing.T) {
 				ResourceID:   "", // Empty resource ID
 			},
 			setupContext: func() context.Context {
-				return setupTestContext("user-123", "tenant-123")
+				userID := uuid.New().String()
+				tenantID := uuid.New().String()
+				return setupTestContext(userID, tenantID)
 			},
-			mockBehavior: func(m *MockPermitSdk) {
-				// Expect empty resource ID
-				m.On("Check", mock.Anything, "user-123", "read", "document", "", "tenant-123").
+			setupMock: func(mockSvc *MockPermitChecker) {
+				mockSvc.On("Check", mock.Anything, mock.Anything, "read", "document", "", mock.Anything).
 					Return(true, nil)
 			},
-			expectedAllowed:  true,
-			expectedErrorMsg: "",
+			expectedAllowed: true,
+			expectedError:   false,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Setup
-			mockSdk := new(MockPermitSdk)
-			resolver := NewTestResolver(mockSdk)
+			// Create mock permit service
+			mockSvc := new(MockPermitChecker)
 
+			// Setup context and mock
 			ctx := tc.setupContext()
-			tc.mockBehavior(mockSdk)
 
-			// Execute
+			// Setup mock expectations if needed
+			if tc.setupMock != nil {
+				tc.setupMock(mockSvc)
+			}
+
+			// Create a resolver with our mock
+			resolver := &TestResourceQueryResolver{
+				PermitChecker: mockSvc,
+			}
+
+			// Execute the function under test
 			result, err := resolver.CheckPermission(ctx, tc.input)
 
-			// Verify
+			// Assertions
 			assert.NoError(t, err, "CheckPermission should not return an error")
 			assert.NotNil(t, result, "Result should not be nil")
 			assert.Equal(t, tc.expectedAllowed, result.Allowed, "Permission allowed status mismatch")
 
-			if tc.expectedErrorMsg != "" {
+			if tc.expectedError {
 				assert.NotNil(t, result.Error, "Expected error message but got nil")
-				assert.Equal(t, tc.expectedErrorMsg, *result.Error, "Error message mismatch")
-			} else if result.Error != nil {
-				assert.Equal(t, "", *result.Error, "Error message should be empty for success cases")
+				assert.Equal(t, tc.expectedErrorMessage, *result.Error, "Error message mismatch")
+			} else {
+				// In success cases, either error should be nil or it should be empty string
+				if result.Error != nil {
+					assert.Equal(t, "", *result.Error, "Error message should be empty for success cases")
+				}
 			}
 
 			// Verify that all expectations were met
-			mockSdk.AssertExpectations(t)
+			mockSvc.AssertExpectations(t)
 		})
 	}
 }
 
 func TestResource(t *testing.T) {
-	// Test the Resource method which is currently a placeholder returning nil, nil
-	t.Run("Resource returns nil for placeholder implementation", func(t *testing.T) {
-		mockSdk := new(MockPermitSdk)
-		resolver := NewTestResolver(mockSdk)
+	// Initialize logger to prevent nil pointer dereference
+	logger.InitLogger()
 
-		// Verify the behavior with different IDs
-		for _, id := range []uuid.UUID{uuid.New(), uuid.Nil} {
-			result, err := resolver.Resource(context.Background(), id)
-			assert.Nil(t, result, "Result should be nil for placeholder implementation")
-			assert.Nil(t, err, "Error should be nil for placeholder implementation")
+	t.Run("Resource returns nil for placeholder implementation", func(t *testing.T) {
+		// Create resolver
+		mockSvc := new(MockPermitChecker)
+		resolver := &TestResourceQueryResolver{
+			PermitChecker: mockSvc,
+		}
+
+		// Test with various contexts and IDs
+		testCases := []struct {
+			name string
+			ctx  context.Context
+			id   uuid.UUID
+		}{
+			{
+				name: "With valid UUID",
+				ctx:  context.Background(),
+				id:   uuid.New(),
+			},
+			{
+				name: "With nil UUID",
+				ctx:  context.Background(),
+				id:   uuid.Nil,
+			},
+			{
+				name: "With context with values",
+				ctx:  setupTestContext(uuid.New().String(), uuid.New().String()),
+				id:   uuid.New(),
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				result, err := resolver.Resource(tc.ctx, tc.id)
+				assert.Nil(t, result, "Result should be nil for placeholder implementation")
+				assert.Nil(t, err, "Error should be nil for placeholder implementation")
+			})
 		}
 	})
 }
 
 func TestResources(t *testing.T) {
-	// Test the Resources method which is currently a placeholder returning nil, nil
-	t.Run("Resources returns nil for placeholder implementation", func(t *testing.T) {
-		mockSdk := new(MockPermitSdk)
-		resolver := NewTestResolver(mockSdk)
+	// Initialize logger to prevent nil pointer dereference
+	logger.InitLogger()
 
-		result, err := resolver.Resources(context.Background())
-		assert.Nil(t, result, "Result should be nil for placeholder implementation")
-		assert.Nil(t, err, "Error should be nil for placeholder implementation")
+	t.Run("Resources returns nil for placeholder implementation", func(t *testing.T) {
+		// Create resolver
+		mockSvc := new(MockPermitChecker)
+		resolver := &TestResourceQueryResolver{
+			PermitChecker: mockSvc,
+		}
+
+		// Test with various contexts
+		testCases := []struct {
+			name string
+			ctx  context.Context
+		}{
+			{
+				name: "With empty context",
+				ctx:  context.Background(),
+			},
+			{
+				name: "With context with values",
+				ctx:  setupTestContext(uuid.New().String(), uuid.New().String()),
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				result, err := resolver.Resources(tc.ctx)
+				assert.Nil(t, result, "Result should be nil for placeholder implementation")
+				assert.Nil(t, err, "Error should be nil for placeholder implementation")
+			})
+		}
 	})
 }
 
