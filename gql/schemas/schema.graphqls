@@ -66,7 +66,7 @@ enum StatusTypeEnum {
 """
 Define a union for the possible 'data' types
 """
-union Data = Account | Binding | ClientOrganizationUnit | Group | Permission | Role | Root | Tenant | User
+union Data = Account | Binding | ClientOrganizationUnit | Group | Permission | Role | Root | Tenant | User | ResourceType
 
 """
 Define a union for the possible operation results
@@ -403,6 +403,11 @@ type Query {
   Fetch all resources.
   """
   resources: OperationResult
+
+  """
+  Fetch all resources types.
+  """
+  resourceTypes: OperationResult
 
   """
   Fetch a specific role by its ID.

@@ -10,6 +10,7 @@ import (
 	"iam_services_main_v1/internal/permissions"
 	"iam_services_main_v1/internal/permit"
 	"iam_services_main_v1/internal/resources"
+	resourcetypes "iam_services_main_v1/internal/resourcetypes"
 	role "iam_services_main_v1/internal/roles"
 	"iam_services_main_v1/internal/root"
 	"iam_services_main_v1/internal/tenants"
@@ -31,6 +32,7 @@ func (r *Resolver) Query() generated.QueryResolver {
 		RoleQueryResolver:                   &role.RoleQueryResolver{PC: r.PC},
 		PermissionQueryResolver:             &permissions.PermissionQueryResolver{},
 		BindingsQueryResolver:               &bindings.BindingsQueryResolver{PC: r.PC},
+		ResourceTypeQueryResolver:           &resourcetypes.ResourceTypeQueryResolver{PC: r.PC},
 		ResourceQueryResolver:               &resources.ResourceQueryResolver{PSC: r.PSC},
 		GroupQueryResolver:                  &groups.GroupQueryResolver{},
 		OrganizationQueryResolver:           &organizations.OrganizationQueryResolver{},
@@ -61,6 +63,7 @@ type queryResolver struct {
 	*permissions.PermissionQueryResolver
 	*bindings.BindingsQueryResolver
 	*resources.ResourceQueryResolver
+	*resourcetypes.ResourceTypeQueryResolver
 	*groups.GroupQueryResolver
 	*organizations.OrganizationQueryResolver
 	*root.RootQueryResolver
