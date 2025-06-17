@@ -13,7 +13,7 @@ type ResourceTypeQueryResolver struct {
 	PC permit.PermitService
 }
 
-func (r *ResourceTypeQueryResolver) ResourceTypes(ctx context.Context) (models.OperationResult, error) {
+func (r *ResourceTypeQueryResolver) AllPermissions(ctx context.Context) (models.OperationResult, error) {
 	logger.LogInfo("Fetching all roles")
 
 	// Fetch roles from permit system

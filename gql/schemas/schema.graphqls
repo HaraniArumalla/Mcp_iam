@@ -407,7 +407,7 @@ type Query {
   """
   Fetch all resources types.
   """
-  resourceTypes: OperationResult
+  allPermissions: OperationResult
 
   """
   Fetch a specific role by its ID.

@@ -62,13 +62,13 @@ func TestResourceTypes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			result, _ := resolver.ResourceTypes(ctx)
+			result, _ := resolver.AllPermissions(ctx)
 			assert.NotNil(t, result)
 		})
 	}
 }
 
-func TestResourceTypeQueryResolver_ResourceTypes(t *testing.T) {
+func TestResourceTypeQueryResolver_AllPermissions(t *testing.T) {
 	ctrl := mock.NewController(t)
 	defer ctrl.Finish()
 
@@ -121,7 +121,7 @@ func TestResourceTypeQueryResolver_ResourceTypes(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.mockStubs(mockService)
-			result, _ := objUnderTest.ResourceTypes(tc.ctx)
+			result, _ := objUnderTest.AllPermissions(tc.ctx)
 			assert.NotNil(t, result)
 		})
 	}
