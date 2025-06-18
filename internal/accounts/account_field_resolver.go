@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"iam_services_main_v1/gql/models"
+	"iam_services_main_v1/helpers"
 	"iam_services_main_v1/internal/clientorganizationunits"
 	"iam_services_main_v1/internal/permit"
 	"iam_services_main_v1/internal/tenants"
@@ -26,8 +27,24 @@ func (r *AccountFieldResolver) ParentOrg(ctx context.Context, account *models.Ac
 		return nil, err
 	}
 	log.Printf("ParentOrg: %v", resourceResponse)
-	clientOrg := clientorganizationunits.BuildOrgUnit(resourceResponse)
-	return clientOrg, nil
+	attributes, ok := resourceResponse["attributes"].(map[string]interface{})
+	if !ok {
+		logger.LogError("failed to get attributes map from Tenant data", "error", "missing or invalid map for key: attributes")
+		return nil, fmt.Errorf("missing or invalid map for key: attributes")
+	}
+	resourceType := helpers.GetString(attributes, "type")
+	if resourceType == "ClientOrganizationUnit" {
+		clientOrg := clientorganizationunits.BuildOrgUnit(resourceResponse)
+		return clientOrg, nil
+
+	} else {
+		tenant, err := tenants.MapTenantData(resourceResponse)
+		if err != nil {
+			logger.LogError("error mapping Tenant data in MapTenantResponseToStruct", "error", err)
+			return nil, err
+		}
+		return tenant, nil
+	}
 }
 
 // ParentOrg resolves the ParentOrg field on the Account type

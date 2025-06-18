@@ -68,10 +68,17 @@ func mapAccountData(accountData map[string]interface{}) (*models.Account, error)
 	billingInfo, _ := mapBillingInfo(attributes)
 	tags := tags.GetResourceTags(attributes, "tags")
 
+	var parentOrg models.Organization
+	if relationType == "CHILD" {
+		parentOrg = &models.Tenant{ID: parentId}
+	} else {
+		parentOrg = &models.ClientOrganizationUnit{ID: parentId}
+	}
+
 	return &models.Account{
 		ID:           id,
 		Type:         config.Account,
-		ParentOrg:    &models.ClientOrganizationUnit{ID: parentId},
+		ParentOrg:    parentOrg,
 		Tenant:       &models.Tenant{ID: tenantId},
 		AccountOwner: &models.User{ID: accountOwnerId},
 		Status:       models.StatusTypeEnum(status),

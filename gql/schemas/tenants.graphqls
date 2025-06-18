@@ -1,7 +1,7 @@
 """
 Represents a Tenant entity
 """
-type Tenant implements Resource & Taggable {
+type Tenant implements Organization & Resource & Taggable {
   """
   User belongs to Account Owner
   """
