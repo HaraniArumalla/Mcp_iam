@@ -41,4 +41,5 @@ const (
 	CORG_RELATION_TYPE        = "relation_type"
 	CORG_STATUS               = "status"
 	CORG_TAGS                 = "tags"
+	TYPE                      = "type"
 )

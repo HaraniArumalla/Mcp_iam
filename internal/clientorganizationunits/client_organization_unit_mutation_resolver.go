@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"iam_services_main_v1/config"
 	"iam_services_main_v1/gql/models"
 	"iam_services_main_v1/helpers"
 	constants "iam_services_main_v1/internal/constants"
@@ -66,6 +67,7 @@ func (r *ClientOrganizationUnitMutationResolver) CreateClientOrganizationUnit(ct
 	attributes[constants.CORG_ACCOUNT_OWNER_ID] = input.AccountOwnerID
 	attributes[constants.CORG_RELATION_TYPE] = input.RelationType
 	attributes[constants.CORG_STATUS] = "ACTIVE"
+	attributes[constants.TYPE] = config.ClientOrganizationUnit
 	attributes[constants.CORG_TAGS] = input.Tags
 
 	_, err = r.PC.APIExecute(ctx, constants.POST, constants.PERMIT_RESOURCE_INSTANCES, map[string]interface{}{

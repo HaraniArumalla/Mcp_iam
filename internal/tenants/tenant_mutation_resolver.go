@@ -145,6 +145,7 @@ func (t *TenantMutationResolver) prepareMetadata(ctx context.Context, input mode
 	}
 	metadata := map[string]interface{}{
 		"id":             input.ID,
+		"type":           config.Tenant,
 		"name":           input.Name,
 		"description":    input.Description,
 		"createdBy":      userID,
