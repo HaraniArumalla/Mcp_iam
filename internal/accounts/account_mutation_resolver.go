@@ -168,7 +168,7 @@ func (r *AccountMutationResolver) prepareMetadata(ctx context.Context, account m
 	if account.Description != nil {
 		metadata["description"] = *account.Description
 	}
-	
+
 	// Add tags if provided
 	if account.Tags != nil {
 		metadata["tags"] = account.Tags
@@ -222,15 +222,18 @@ func (r *AccountMutationResolver) createResourceInstances(ctx context.Context, i
 // createRelationshipTuples creates a parent-child relationship tuple for the account in the permission system, linking the account ID with its resource type
 func (r *AccountMutationResolver) createRelationshipTuples(ctx context.Context, input models.CreateAccountInput, tenantID *uuid.UUID) error {
 	var objectType string
+	var subjectType string
 	if strings.ToLower(string(input.RelationType)) == "parent" {
-		objectType = config.ClientOrgUnitResourceTypeID + ":" + input.ParentID.String()
+		subjectType = config.ClientOrgUnitResourceTypeID + ":" + input.ParentID.String()
+		objectType = config.AccountResourceTypeID + ":" + input.ID.String()
 	} else {
+		subjectType = config.AccountResourceTypeID + ":" + input.ID.String()
 		objectType = config.TenantResourceTypeID + ":" + input.ParentID.String()
 	}
 	_, err := r.PC.SendRequest(ctx, "POST", "relationship_tuples", map[string]interface{}{
 		"object":   objectType,
 		"relation": strings.ToLower(string(input.RelationType)),
-		"subject":  config.AccountResourceTypeID + ":" + input.ID.String(),
+		"subject":  subjectType,
 		"tenant":   tenantID.String(),
 	})
 
