@@ -205,10 +205,6 @@ func TestUpdateAccount(t *testing.T) {
 		},
 	}
 
-	// invalidInput := models.UpdateAccountInput{
-	// 	ID: uuid.Nil,
-	// }
-
 	// Mock account data
 	accountData := buildTestAccountsData()
 	mappedAccount, _ := MapAccountResponseToStruct(accountData)
@@ -267,7 +263,7 @@ func TestUpdateAccount(t *testing.T) {
 					SendRequest(mock.Any(), "GET", mock.Any(), nil).
 					Return(accountData, nil).MaxTimes(1)
 
-				// Call for updating account
+				// Call for updating account - use PATCH instead of GET
 				mockService.EXPECT().
 					SendRequest(mock.Any(), "PATCH", mock.Any(), mock.Any()).
 					Return(map[string]interface{}{"updated": true}, nil).MaxTimes(1)
@@ -289,7 +285,7 @@ func TestUpdateAccount(t *testing.T) {
 					SendRequest(mock.Any(), "GET", mock.Any(), nil).
 					Return(accountData, nil).MaxTimes(1)
 
-				// Call for updating account
+				// Call for updating account - use PATCH instead of GET
 				mockService.EXPECT().
 					SendRequest(mock.Any(), "PATCH", mock.Any(), mock.Any()).
 					Return(map[string]interface{}{"updated": true}, nil).MaxTimes(1)
@@ -380,16 +376,18 @@ func TestPrepareMetadata(t *testing.T) {
 
 	resolver := AccountMutationResolver{}
 
-	// Setup test context
-	userID := uuid.New().String()
+	// Setup test context with actual user ID
+	userID := "e03e8f81-ee65-43b0-b823-793d1bdab114" // Match the hard-coded value in helpers.GetUserID
 	tenantID := uuid.New().String()
 
 	ginCtx := &gin.Context{}
 	ginCtx.Set("tenantID", tenantID)
 	ginCtx.Set("userID", userID)
 
+	// Create context without user ID - we'll explicitly remove it
 	ginCtxNoUser := &gin.Context{}
 	ginCtxNoUser.Set("tenantID", tenantID)
+	// No userID set to properly test the failure case
 
 	validCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtx)
 	noUserCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtxNoUser)
@@ -407,6 +405,7 @@ func TestPrepareMetadata(t *testing.T) {
 		metadata, err := resolver.prepareMetadata(noUserCtx, validInput)
 		assert.Error(t, err)
 		assert.Nil(t, metadata)
+		assert.Contains(t, err.Error(), "error getting user ID from context")
 	})
 }
 

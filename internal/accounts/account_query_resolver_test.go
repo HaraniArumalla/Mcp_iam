@@ -25,10 +25,11 @@ func TestAccounts(t *testing.T) {
 		PC: mockService,
 	}
 
-	// Setup test context
-	tenantID := uuid.New()
+	// Setup test context with fixed tenant ID for predictable tests
+	fixedTenantID := "03a60027-ceec-088a-1ebd-10c657320f0f"
+	
 	ginCtx := &gin.Context{}
-	ginCtx.Set("tenantID", tenantID.String())
+	ginCtx.Set("tenantID", fixedTenantID)
 	validCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtx)
 
 	// Context without tenant ID
@@ -54,7 +55,7 @@ func TestAccounts(t *testing.T) {
 			ctx:  validCtx,
 			mockSetup: func() {
 				expectedURL := fmt.Sprintf("resource_instances/detailed?tenant=%s&resource=%s",
-					tenantID.String(), config.AccountResourceTypeID)
+					fixedTenantID, config.AccountResourceTypeID)
 				mockService.EXPECT().
 					SendRequest(mock.Any(), "GET", expectedURL, nil).
 					Return(accountsResponse, nil)
@@ -73,8 +74,10 @@ func TestAccounts(t *testing.T) {
 			name: "Error from permit service",
 			ctx:  validCtx,
 			mockSetup: func() {
+				expectedURL := fmt.Sprintf("resource_instances/detailed?tenant=%s&resource=%s",
+					fixedTenantID, config.AccountResourceTypeID)
 				mockService.EXPECT().
-					SendRequest(mock.Any(), "GET", mock.Any(), nil).
+					SendRequest(mock.Any(), "GET", expectedURL, nil).
 					Return(nil, errors.New("permit service error"))
 			},
 			expected: utils.FormatErrorResponse(400, "Failed to get all accounts from permit", "permit service error"),
@@ -83,8 +86,10 @@ func TestAccounts(t *testing.T) {
 			name: "Invalid response format",
 			ctx:  validCtx,
 			mockSetup: func() {
+				expectedURL := fmt.Sprintf("resource_instances/detailed?tenant=%s&resource=%s",
+					fixedTenantID, config.AccountResourceTypeID)
 				mockService.EXPECT().
-					SendRequest(mock.Any(), "GET", mock.Any(), nil).
+					SendRequest(mock.Any(), "GET", expectedURL, nil).
 					Return(map[string]interface{}{
 						"data": "not an array",
 					}, nil)
@@ -99,6 +104,7 @@ func TestAccounts(t *testing.T) {
 			result, _ := resolver.Accounts(tc.ctx)
 
 			assert.NotNil(t, result)
+			// Additional assertions could be added here
 		})
 	}
 }
@@ -112,12 +118,13 @@ func TestAccount(t *testing.T) {
 		PC: mockService,
 	}
 
-	// Setup test context
-	tenantID := uuid.New()
-	validID := uuid.New()
+	// Setup test context with fixed IDs for predictable tests
+	fixedTenantID := "03a60027-ceec-088a-1ebd-10c657320f0f"
+	fixedAccountID := "5e4d96e8-4498-401e-ba9e-4f4f20614ca6"
+	validID, _ := uuid.Parse(fixedAccountID)
 
 	ginCtx := &gin.Context{}
-	ginCtx.Set("tenantID", tenantID.String())
+	ginCtx.Set("tenantID", fixedTenantID)
 	validCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtx)
 
 	// Context without tenant ID
@@ -125,7 +132,7 @@ func TestAccount(t *testing.T) {
 	noTenantCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtxNoTenant)
 
 	// Mock account data
-	accountData := buildTestAccountData(uuid.New())
+	accountData := buildTestAccountData(validID)
 	mappedAccount, _ := MapAccountResponseToStruct(accountData)
 	successResponse, _ := utils.FormatSuccessResponse(mappedAccount)
 
@@ -141,10 +148,10 @@ func TestAccount(t *testing.T) {
 			ctx:  validCtx,
 			id:   validID,
 			mockSetup: func() {
-				expectedURL := fmt.Sprintf("resource_instances/%s", validID)
+				expectedURL := fmt.Sprintf("resource_instances/%s", fixedAccountID)
 				mockService.EXPECT().
 					SendRequest(mock.Any(), "GET", expectedURL, nil).
-					Return(accountData, nil)
+					Return(accountData, nil).MaxTimes(1)
 			},
 			expected: successResponse,
 		},
@@ -162,9 +169,10 @@ func TestAccount(t *testing.T) {
 			ctx:  validCtx,
 			id:   validID,
 			mockSetup: func() {
+				expectedURL := fmt.Sprintf("resource_instances/%s", fixedAccountID)
 				mockService.EXPECT().
-					SendRequest(mock.Any(), "GET", mock.Any(), nil).
-					Return(nil, errors.New("permit service error"))
+					SendRequest(mock.Any(), "GET", expectedURL, nil).
+					Return(nil, errors.New("permit service error")).MaxTimes(1)
 			},
 			expected: utils.FormatErrorResponse(400, "Failed to get account resources from permit", "permit service error"),
 		},
@@ -173,11 +181,12 @@ func TestAccount(t *testing.T) {
 			ctx:  validCtx,
 			id:   validID,
 			mockSetup: func() {
+				expectedURL := fmt.Sprintf("resource_instances/%s", fixedAccountID)
 				mockService.EXPECT().
-					SendRequest(mock.Any(), "GET", mock.Any(), nil).
+					SendRequest(mock.Any(), "GET", expectedURL, nil).
 					Return(map[string]interface{}{
 						"key": "not a valid UUID",
-					}, nil)
+					}, nil).MaxTimes(1)
 			},
 			expected: utils.FormatErrorResponse(400, "Failed to get account resources from permit", "failed to get UUID from account data: invalid UUID format"),
 		},
@@ -189,6 +198,7 @@ func TestAccount(t *testing.T) {
 			result, _ := resolver.Account(tc.ctx, tc.id)
 
 			assert.NotNil(t, result)
+			// Additional assertions could be added here
 		})
 	}
 }

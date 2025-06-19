@@ -35,9 +35,9 @@ func TestAccountFieldResolver_ParentOrg(t *testing.T) {
 		ParentOrg: &models.ClientOrganizationUnit{ID: uuid.New()},
 	}
 
-	t.Run("Success", func(t *testing.T) {
-		// Mock response data
-		mockResponse := buildTestClientOrganizationData(account.ID)
+	t.Run("Success_With_ClientOrg", func(t *testing.T) {
+		// Mock response data for ClientOrganizationUnit
+		mockResponse := buildTestClientOrganizationData(account.ParentOrg.GetID())
 
 		// Set up expected behavior
 		mockPermitService.EXPECT().
@@ -51,6 +51,25 @@ func TestAccountFieldResolver_ParentOrg(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, "Test Org", result.GetName())
+	})
+
+	t.Run("Success_With_Tenant", func(t *testing.T) {
+		// Mock response data with tenant type
+		mockResponse := buildTestTenantData(account.ParentOrg.GetID())
+		mockResponse["attributes"].(map[string]interface{})["type"] = "Tenant"
+
+		// Set up expected behavior
+		mockPermitService.EXPECT().
+			GetSingleResource(ctx, "GET", gomock.Any()).
+			Return(mockResponse, nil).MaxTimes(1)
+
+		// Call method being tested
+		result, err := resolver.ParentOrg(ctx, account)
+
+		// Assert results
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, "Test Tenant", result.GetName())
 	})
 
 	t.Run("Error_Fetching_ParentOrg", func(t *testing.T) {
@@ -67,6 +86,27 @@ func TestAccountFieldResolver_ParentOrg(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, expectedError, err)
 		assert.Nil(t, result)
+	})
+
+	t.Run("Error_Invalid_Attributes", func(t *testing.T) {
+		// Mock response data without attributes
+		mockResponse := map[string]interface{}{
+			"key":  account.ParentOrg.GetID().String(),
+			"name": "Test Org",
+		}
+
+		// Set up expected behavior
+		mockPermitService.EXPECT().
+			GetSingleResource(ctx, "GET", gomock.Any()).
+			Return(mockResponse, nil).MaxTimes(1)
+
+		// Call method being tested
+		result, err := resolver.ParentOrg(ctx, account)
+
+		// Assert error
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "missing or invalid map for key: attributes")
 	})
 }
 
@@ -151,6 +191,66 @@ func TestAccountFieldResolver_Tenant(t *testing.T) {
 	})
 }
 
+func TestAccountFieldResolver_AccountOwner(t *testing.T) {
+	// Create mock controller
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Create mock PermitService
+	mockPermitService := mocks.NewMockPermitService(ctrl)
+
+	// Create AccountFieldResolver with mock
+	resolver := &AccountFieldResolver{
+		PC: mockPermitService,
+	}
+
+	// Test context
+	ctx := context.Background()
+
+	// Test data
+	ownerID := uuid.New()
+	account := &models.Account{
+		ID:           uuid.New(),
+		AccountOwner: &models.User{ID: ownerID},
+	}
+
+	t.Run("Success", func(t *testing.T) {
+		// Mock response data for user
+		mockUserResponse := buildTestUserData(ownerID)
+
+		// Set up expected behavior - use GetSingleResource instead of SendRequest
+		mockPermitService.EXPECT().
+			GetSingleResource(ctx, "GET", "users/"+ownerID.String()).
+			Return(mockUserResponse, nil).MaxTimes(1)
+
+		// Call method being tested
+		result, err := resolver.AccountOwner(ctx, account)
+
+		// Assert results
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, ownerID, result.ID)
+		assert.Equal(t, "Test User", result.Name)
+		assert.Equal(t, "test@example.com", result.Email)
+	})
+
+	t.Run("Error_Fetching_User", func(t *testing.T) {
+		// Set up expected behavior for error case - use GetSingleResource instead of SendRequest
+		expectedError := errors.New("failed to fetch user")
+		mockPermitService.EXPECT().
+			GetSingleResource(ctx, "GET", "users/"+ownerID.String()).
+			Return(nil, expectedError).MaxTimes(1)
+
+		// Call method being tested
+		result, err := resolver.AccountOwner(ctx, account)
+
+		// Assert error
+		assert.Error(t, err)
+		assert.Equal(t, expectedError, err)
+		assert.Nil(t, result)
+	})
+}
+
 // Helper function to build test tenant data
 func buildTestTenantData(id uuid.UUID) map[string]interface{} {
 	return map[string]interface{}{
@@ -195,10 +295,28 @@ func buildTestClientOrganizationData(id uuid.UUID) map[string]interface{} {
 	attributes["status"] = "ACTIVE"
 	attributes["relation_type"] = "SELF"
 	attributes["name"] = "Test Org"
+	attributes["type"] = "ClientOrganizationUnit"
 	attributes["key"] = id.String()
 	result["key"] = id.String()
 	result["name"] = "Test Org"
 	result["attributes"] = attributes
 
 	return result
+}
+
+// Helper function to build test user data
+func buildTestUserData(id uuid.UUID) map[string]interface{} {
+	return map[string]interface{}{
+		"key":        id.String(),
+		"first_name": "Test",
+		"last_name":  "User",
+		"email":      "test@example.com",
+		"created_at": time.Now().String(),
+		"updated_at": time.Now().String(),
+		"associated_tenants": []interface{}{
+			map[string]interface{}{
+				"tenant": uuid.New().String(),
+			},
+		},
+	}
 }

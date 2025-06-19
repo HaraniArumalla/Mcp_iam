@@ -140,48 +140,59 @@ func (r *AccountMutationResolver) DeleteAccount(ctx context.Context, input model
 }
 
 // prepareMetadata converts CreateAccountInput into metadata map for account creation
-func (r *AccountMutationResolver) prepareMetadata(ctx context.Context, input models.CreateAccountInput) (map[string]interface{}, error) {
+func (r *AccountMutationResolver) prepareMetadata(ctx context.Context, account models.CreateAccountInput) (map[string]interface{}, error) {
+	// Get user ID from context for tracking who made the change
 	userID, err := helpers.GetUserID(ctx)
 	if err != nil {
-		return nil, err
+		logger.LogError("Failed to get user ID from context", "error", err)
+		return nil, fmt.Errorf("error getting user ID from context")
 	}
+
+	// Create metadata for account creation
 	metadata := map[string]interface{}{
-		"id":             input.ID,
-		"type":           config.Account,
-		"parentId":       input.ParentID,
-		"relationType":   input.RelationType,
+		"id":             account.ID,
+		"name":           account.Name,
+		"type":           "Account",
+		"tenantId":       account.TenantID,
+		"parentId":       account.ParentID,
+		"relationType":   account.RelationType,
 		"status":         "ACTIVE",
-		"tenantId":       input.TenantID,
-		"accountOwnerId": input.AccountOwnerID,
-		"name":           input.Name,
-		"description":    input.Description,
-		"createdBy":      userID,
-		"updatedBy":      userID,
 		"createdAt":      time.Now().UTC().Format(time.RFC3339),
 		"updatedAt":      time.Now().UTC().Format(time.RFC3339),
-	}
-	if input.Tags != nil {
-		metadata["tags"] = input.Tags
+		"createdBy":      userID,
+		"updatedBy":      userID,
+		"accountOwnerId": account.AccountOwnerID,
 	}
 
-	// Only add billing info if it exists
-	if input.BillingInfo != nil {
+	// Add description if provided
+	if account.Description != nil {
+		metadata["description"] = *account.Description
+	}
+	
+	// Add tags if provided
+	if account.Tags != nil {
+		metadata["tags"] = account.Tags
+	}
+
+	// Add billing information if provided
+	if account.BillingInfo != nil {
 		billingInfo := map[string]interface{}{
-			"creditCardNumber": input.BillingInfo.CreditCardNumber,
-			"creditCardType":   input.BillingInfo.CreditCardType,
-			"expirationDate":   input.BillingInfo.ExpirationDate,
-			"cvv":              input.BillingInfo.Cvv,
+			"creditCardNumber": account.BillingInfo.CreditCardNumber,
+			"creditCardType":   account.BillingInfo.CreditCardType,
+			"expirationDate":   account.BillingInfo.ExpirationDate,
+			"cvv":              account.BillingInfo.Cvv,
 		}
 
-		// Add billing address if it exists
-		if input.BillingInfo.BillingAddress != nil {
-			billingInfo["billingAddress"] = map[string]interface{}{
-				"street":  input.BillingInfo.BillingAddress.Street,
-				"city":    input.BillingInfo.BillingAddress.City,
-				"state":   input.BillingInfo.BillingAddress.State,
-				"country": input.BillingInfo.BillingAddress.Country,
-				"zipcode": input.BillingInfo.BillingAddress.Zipcode,
+		// Add billing address if provided
+		if account.BillingInfo.BillingAddress != nil {
+			billingAddress := map[string]interface{}{
+				"street":  account.BillingInfo.BillingAddress.Street,
+				"city":    account.BillingInfo.BillingAddress.City,
+				"state":   account.BillingInfo.BillingAddress.State,
+				"zipcode": account.BillingInfo.BillingAddress.Zipcode,
+				"country": account.BillingInfo.BillingAddress.Country,
 			}
+			billingInfo["billingAddress"] = billingAddress
 		}
 
 		metadata["billingInfo"] = billingInfo
