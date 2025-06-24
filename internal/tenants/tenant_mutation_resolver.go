@@ -7,7 +7,6 @@ import (
 	"iam_services_main_v1/config"
 	"iam_services_main_v1/gql/models"
 	"iam_services_main_v1/helpers"
-	"iam_services_main_v1/internal/middlewares"
 	"iam_services_main_v1/internal/permit"
 	"iam_services_main_v1/internal/utils"
 	"iam_services_main_v1/pkg/logger"
@@ -72,11 +71,6 @@ func (t *TenantMutationResolver) CreateTenant(ctx context.Context, input models.
 
 // UpdateTenant resolver for updating a Tenant
 func (t *TenantMutationResolver) UpdateTenant(ctx context.Context, input models.UpdateTenantInput) (models.OperationResult, error) {
-	_, err := middlewares.AuthorizationMiddleware(ctx, t.PSC, "update", config.TenantResourceTypeID, input.ID.String())
-
-	if err != nil {
-		return utils.FormatErrorResponse(http.StatusBadRequest, "User is not authorized to update the tenant", err.Error()), nil
-	}
 	if input.ID == uuid.Nil {
 		err := errors.New("Tenant ID is required")
 		return utils.FormatErrorResponse(http.StatusBadRequest, "Tenant ID is required", err.Error()), nil
@@ -108,11 +102,6 @@ func (t *TenantMutationResolver) UpdateTenant(ctx context.Context, input models.
 
 // DeleteTenant resolver for deleting a Tenant
 func (t *TenantMutationResolver) DeleteTenant(ctx context.Context, input models.DeleteInput) (models.OperationResult, error) {
-	_, err := middlewares.AuthorizationMiddleware(ctx, t.PSC, "delete", config.TenantResourceTypeID, input.ID.String())
-
-	if err != nil {
-		return utils.FormatErrorResponse(http.StatusBadRequest, "User is not authorized to delete the tenant", err.Error()), nil
-	}
 	// Check if ID is provided
 	if input.ID == uuid.Nil {
 		err := errors.New("Tenant ID is required")

@@ -53,6 +53,15 @@ func setupMiddleware(router *gin.Engine) {
 
 // setupRoutes configures all routes for the server
 func setupRoutes(router *gin.Engine) {
+	// Initialize Permit SDK service
+	permitSdkService := initPermitSdkService()
+	if permitSdkService == nil {
+		logger.LogError("Failed to create Permit SDK service")
+		router.GET("/error", func(c *gin.Context) {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Server configuration error"})
+		})
+		return
+	}
 	healthHandler := &healthchecks.HealthHandler{}
 	router.GET("/status", healthHandler.SimpleStatus)
 	router.GET("/health/live", healthHandler.LivenessCheck)
@@ -60,12 +69,12 @@ func setupRoutes(router *gin.Engine) {
 	router.Use(middlewares.RequestLogger())
 	router.Use(middlewares.GinContextToContextMiddleware())
 	router.GET("/playground", gin.WrapH(playground.Handler("GraphQL playground", "/graphql")))
-	router.Use(middlewares.AuthMiddleware())
-	router.POST("/graphql", graphqlHandler())
+	//router.Use(middlewares.AuthMiddleware())
+	router.POST("/graphql", middlewares.GraphQLAuthMiddleware(permitSdkService), graphqlHandler(permitSdkService))
 }
 
 // graphqlHandler creates and returns the GraphQL handler
-func graphqlHandler() gin.HandlerFunc {
+func graphqlHandler(permitSdkService *permit.PermitSdkService) gin.HandlerFunc {
 	// Create permit service with panic recovery
 	permitclint := NewPermitClient()
 	if permitclint == nil {
@@ -76,15 +85,6 @@ func graphqlHandler() gin.HandlerFunc {
 	}
 
 	permitService := permit.NewPermitServiceImpl(permitclint)
-
-	// Initialize Permit SDK service
-	permitSdkService := initPermitSdkService()
-	if permitSdkService == nil {
-		logger.LogError("Failed to create Permit SDK service")
-		return func(c *gin.Context) {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Server configuration error"})
-		}
-	}
 
 	config := generated.Config{
 		Resolvers: &gql.Resolver{PC: permitService, PSC: permitSdkService},

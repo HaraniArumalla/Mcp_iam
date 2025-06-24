@@ -3,9 +3,7 @@ package tenants
 import (
 	"context"
 	"fmt"
-	"iam_services_main_v1/config"
 	"iam_services_main_v1/gql/models"
-	"iam_services_main_v1/internal/middlewares"
 	"iam_services_main_v1/internal/permit"
 	"iam_services_main_v1/internal/utils"
 	"iam_services_main_v1/pkg/logger"
@@ -76,11 +74,6 @@ func (r *TenantQueryResolver) Tenants(ctx context.Context) (models.OperationResu
 //
 // Any errors during these operations are logged and returned as formatted error responses.
 func (r *TenantQueryResolver) Tenant(ctx context.Context, id uuid.UUID) (models.OperationResult, error) {
-	_, err := middlewares.AuthorizationMiddleware(ctx, r.PSC, "getbyid", config.TenantResourceTypeID, id.String())
-
-	if err != nil {
-		return utils.FormatErrorResponse(http.StatusBadRequest, "User is not authorized to get the tenant details by id", err.Error()), nil
-	}
 	logger.LogInfo("Fetching tenant by ID", "id", id)
 
 	// Validate ID
