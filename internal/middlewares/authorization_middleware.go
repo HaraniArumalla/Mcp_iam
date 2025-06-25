@@ -1,7 +1,9 @@
 package middlewares
 
 import (
+	"context"
 	"encoding/json"
+	"iam_services_main_v1/helpers"
 	"iam_services_main_v1/internal/permit"
 	"iam_services_main_v1/pkg/logger"
 	"io"
@@ -48,6 +50,13 @@ func GraphQLAuthMiddleware(psc *permit.PermitSdkService) gin.HandlerFunc {
 		}
 
 		logger.LogInfo("GraphQL request", "action", action, "resourceType", resourceType)
+
+		ctx := c.Request.Context()
+		authorized, err := AuthorizationMiddleware(ctx, psc, action, resourceType, "*")
+		if err != nil || !authorized {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "User does not have permission to perform this action"})
+			return
+		}
 
 		c.Next()
 	}
@@ -117,4 +126,26 @@ func contains(slice []string, val string) bool {
 		}
 	}
 	return false
+}
+
+// AuthMiddleware creates a Gin middleware for JWT authentication with the default OpenID endpoint
+func AuthorizationMiddleware(ctx context.Context, psc *permit.PermitSdkService, action, resourceType, resourceId string) (bool, error) {
+
+	logger.LogInfo("Authorization middleware invoked", "action", action, "resourceType", resourceType, "resourceId", resourceId)
+	// Get user and tenant context
+	userID, tenantID, err := helpers.GetUserAndTenantID(ctx)
+	logger.LogInfo("User ID and Tenant ID", "userID", userID, "tenantID", tenantID)
+	if err != nil {
+		return false, err
+	}
+	logger.LogInfo("User ID and Tenant ID extracted", "userID", userID, "tenantID", tenantID)
+	logger.LogInfo("the action is and resourceType is", "action", action, "resourceType", resourceType)
+	// Check permission
+	authorized, err := psc.Check(ctx, userID.String(), strings.ToLower(action), resourceType, resourceId, tenantID.String())
+	if err != nil {
+		return false, err
+	}
+	
+	logger.LogInfo("Authorization check passed", "userId", userID, "tenantId", tenantID, "action", action, "resourceType", resourceType, "resourceId", resourceId)
+	return authorized, nil
 }
