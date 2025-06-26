@@ -89,6 +89,8 @@ func BuildOrgUnit(result map[string]interface{}) *models.ClientOrganizationUnit 
 	relationType := models.RelationTypeEnum(attributes[constants.CORG_RELATION_TYPE].(string))
 	status := models.StatusTypeEnum(attributes[constants.CORG_STATUS].(string))
 	accountOwner := &models.User{ID: uuid.MustParse(attributes[constants.CORG_ACCOUNT_OWNER_ID].(string))}
+	createdAt, _ := helpers.ConvertToZFormat(attributes[constants.CREATED_AT].(string))
+	updatedAt, _ := helpers.ConvertToZFormat(attributes[constants.UPDATED_AT].(string))
 
 	// if len(tags) == 0 {
 	// 	tagList = make([]*models.Tags, 0)
@@ -107,8 +109,8 @@ func BuildOrgUnit(result map[string]interface{}) *models.ClientOrganizationUnit 
 		Name:         attributes[constants.NAME].(string),
 		Description:  &description,
 		Tenant:       &models.Tenant{ID: tenantId},
-		CreatedAt:    attributes[constants.CREATED_AT].(string),
-		UpdatedAt:    attributes[constants.UPDATED_AT].(string),
+		CreatedAt:    createdAt,
+		UpdatedAt:    updatedAt,
 		CreatedBy:    createdBy,
 		UpdatedBy:    updatedBy,
 		RelationType: relationType,

@@ -74,6 +74,10 @@ func MapTenantData(TenantData map[string]interface{}) (*models.Tenant, error) {
 	}
 	contactInfo, _ := mapContactInfo(attributes)
 	tags := tags.GetResourceTags(attributes, "tags")
+	createdAt := helpers.GetString(TenantData, "created_at")
+	createdAt, _ = helpers.ConvertToZFormat(createdAt)
+	updatedAt := helpers.GetString(TenantData, "updated_at")
+	updatedAt, _ = helpers.ConvertToZFormat(updatedAt)
 	return &models.Tenant{
 		ID:           id,
 		Type:         config.Tenant,
@@ -81,8 +85,8 @@ func MapTenantData(TenantData map[string]interface{}) (*models.Tenant, error) {
 		Status:       models.StatusTypeEnum(status),
 		AccountOwner: &models.User{ID: accountOwnerId},
 		Description:  &description,
-		CreatedAt:    helpers.GetString(TenantData, "created_at"),
-		UpdatedAt:    helpers.GetString(TenantData, "updated_at"),
+		CreatedAt:    createdAt,
+		UpdatedAt:    updatedAt,
 		CreatedBy:    createdBy,
 		UpdatedBy:    updatedBy,
 		ContactInfo:  contactInfo,

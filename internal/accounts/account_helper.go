@@ -74,7 +74,10 @@ func mapAccountData(accountData map[string]interface{}) (*models.Account, error)
 	} else {
 		parentOrg = &models.ClientOrganizationUnit{ID: parentId}
 	}
-
+	createdAt := helpers.GetString(accountData, "created_at")
+	createdAt, _ = helpers.ConvertToZFormat(createdAt)
+	updatedAt := helpers.GetString(accountData, "updated_at")
+	updatedAt, _ = helpers.ConvertToZFormat(updatedAt)
 	return &models.Account{
 		ID:           id,
 		Type:         config.Account,
@@ -87,8 +90,8 @@ func mapAccountData(accountData map[string]interface{}) (*models.Account, error)
 		Description:  &description,
 		CreatedBy:    createdBy,
 		UpdatedBy:    updatedBy,
-		CreatedAt:    helpers.GetString(accountData, "created_at"),
-		UpdatedAt:    helpers.GetString(accountData, "updated_at"),
+		CreatedAt:    createdAt,
+		UpdatedAt:    updatedAt,
 		BillingInfo:  billingInfo,
 		Tags:         tags,
 	}, nil

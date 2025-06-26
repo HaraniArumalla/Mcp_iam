@@ -2,11 +2,11 @@ package helpers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"iam_services_main_v1/config"
 	"iam_services_main_v1/pkg/logger"
 	"reflect"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -16,7 +16,7 @@ import (
 func GetGinContext(ctx context.Context) (*gin.Context, error) {
 	ginContext := ctx.Value(config.GinContextKey)
 	if ginContext == nil {
-		return nil, errors.New("could not retrieve gin context")
+		return nil, fmt.Errorf("could not retrieve gin context")
 	}
 	return ginContext.(*gin.Context), nil
 }
@@ -36,7 +36,6 @@ func GetTenantID(ctx context.Context) (*uuid.UUID, error) {
 		return nil, fmt.Errorf("gin context not found in the GetTenantID request")
 	}
 	tenantID, exists := ginCtx.Get("tenantID")
-
 	if !exists {
 		return nil, fmt.Errorf("tenant id not found in context")
 	}
@@ -62,18 +61,17 @@ func GetUserID(ctx context.Context) (*uuid.UUID, error) {
 		return nil, fmt.Errorf("gin context not found in the GetUserID request")
 	}
 	userID, exists := ginCtx.Get("userID")
-
 	if !exists {
 		return nil, fmt.Errorf("user id not found in context")
 	}
 
 	switch userID := userID.(type) {
 	case string:
-		parseduserID, err := uuid.Parse(userID)
+		parsedUserID, err := uuid.Parse(userID)
 		if err != nil {
 			return nil, fmt.Errorf("error parsing user id: %w", err)
 		}
-		return &parseduserID, nil
+		return &parsedUserID, nil
 	case uuid.UUID:
 		return &userID, nil
 	default:
@@ -252,4 +250,14 @@ func GetUserAndTenantID(ctx context.Context) (*uuid.UUID, *uuid.UUID, error) {
 
 func Ptr(s string) *string {
 	return &s
+}
+
+// ConvertToZFormat converts date string with timezone offset to UTC Z format
+func ConvertToZFormat(input string) (string, error) {
+	t, err := time.Parse(time.RFC3339, input)
+	if err != nil {
+		logger.LogError("error parsing time", "input", input, "error", err)
+		return "", err
+	}
+	return t.UTC().Format(time.RFC3339), nil
 }
