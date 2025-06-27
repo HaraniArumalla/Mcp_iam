@@ -9,6 +9,7 @@ import (
 	"iam_services_main_v1/helpers"
 	constants "iam_services_main_v1/internal/constants"
 	"iam_services_main_v1/internal/permit"
+	"iam_services_main_v1/internal/utils"
 	"net/http"
 	"time"
 
@@ -161,9 +162,30 @@ func (r *ClientOrganizationUnitMutationResolver) DeleteClientOrganizationUnit(ct
 	}
 
 	logger.Info("delete client organization request received")
-	url := fmt.Sprintf(constants.PERMIT_RESOURCE_INSTANCES+"/%s", input.ID)
+	tenantID, err := helpers.GetTenantID(ctx)
+	if err != nil {
+		return utils.FormatErrorResponse(http.StatusBadRequest, "Failed to get tenant ID", err.Error()), nil
+	}
+	subjectType := config.ClientOrgUnitResourceTypeID + ":" + input.ID.String()
+	url := fmt.Sprintf("relationship_tuples/detailed?tenant=%s&subject=%s",
+		tenantID.String(),
+		subjectType,
+	)
+	clientOrgUnitResponse, err := r.PC.SendRequest(ctx, constants.GET, url, nil)
+	if err != nil {
+		return buildErrorResponse(http.StatusNotFound, err.Error(), "unable to fetch resource from permit"), nil
+	}
+	rawData, ok := clientOrgUnitResponse["data"].([]interface{})
+	if !ok {
+		return buildErrorResponse(http.StatusNotFound, "missing or invalid data field", "missing or invalid data field"), nil
+	}
+	if len(rawData) > 0 {
+		return buildErrorResponse(http.StatusBadRequest, "unable to delete organization due to associated accounts", "organization has accounts associated with it"), nil
+	}
 
-	_, err := r.PC.APIExecute(ctx, constants.DELETE, url, nil)
+	url = fmt.Sprintf(constants.PERMIT_RESOURCE_INSTANCES+"/%s", input.ID)
+
+	_, err = r.PC.APIExecute(ctx, constants.DELETE, url, nil)
 	if err != nil {
 		// do we need to rever in our database too?
 		return buildErrorResponse(http.StatusBadRequest, err.Error(), "unable to delete organization in permit"), nil
