@@ -113,17 +113,13 @@ func extractAction(req graphQLRequest) string {
 
 // deriveResourceType returns resource type based on action
 func deriveResourceType(action string) string {
-	tenantActions := []string{"createTenant", "updateTenant", "deleteTenant", "tenants", "tenant"}
-	clientOrgActions := []string{"createClientOrganizationUnit", "updateClientOrganizationUnit", "deleteClientOrganizationUnit", "clientOrganizationUnits", "clientOrganizationUnit"}
-	accountActions := []string{"createAccount", "updateAccount", "deleteAccount", "accounts", "account"}
-
-	if contains(tenantActions, action) {
+	if strings.Contains(strings.ToLower(action), "tenant") {
 		return config.TenantResourceTypeID
 	}
-	if contains(clientOrgActions, action) {
+	if strings.Contains(strings.ToLower(action), "clientorganizationunit") {
 		return config.ClientOrgUnitResourceTypeID
 	}
-	if contains(accountActions, action) {
+	if strings.Contains(strings.ToLower(action), "account") {
 		return config.AccountResourceTypeID
 	}
 	return ""
