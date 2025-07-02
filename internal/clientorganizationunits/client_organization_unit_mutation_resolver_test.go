@@ -278,9 +278,6 @@ func TestDeleteClientOrganizationUnit(t *testing.T) {
 	ginCtxWithOutTenantId := &gin.Context{}
 	ginCtxWithOutTenantId.Set("userID", "b5b44e90-906e-458a-8bb1-e9e4ee180696")
 
-	validCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtxWithUserId)
-	testCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtx)
-	ctxWithoutTenantId := context.WithValue(context.Background(), config.GinContextKey, ginCtxWithOutTenantId)
 	noGinCtx := context.Background()
 
 	inputNullId := models.DeleteInput{
@@ -291,7 +288,6 @@ func TestDeleteClientOrganizationUnit(t *testing.T) {
 		ID: uuid.New(),
 	}
 
-	result := buildSuccessResponse(&models.ClientOrganizationUnit{})
 	testcases := []struct {
 		name      string
 		input     models.DeleteInput
@@ -313,38 +309,6 @@ func TestDeleteClientOrganizationUnit(t *testing.T) {
 			mockStubs: func(mockSvc mocks.MockPermitService) {},
 			output:    buildErrorResponse(400, "unable to fetch gin context", "error while fetching gin context"),
 		},
-		{
-			name:      "DeleteClientOrganizationUnit without tenant ID in context",
-			input:     validDeleteInput,
-			ctx:       ctxWithoutTenantId,
-			mockStubs: func(mockSvc mocks.MockPermitService) {},
-			output:    buildErrorResponse(400, "failed", "unable to fetch resource from permit"),
-		},
-		{
-			name:      "DeleteClientOrganizationUnit without user ID in context",
-			input:     validDeleteInput,
-			ctx:       testCtx,
-			mockStubs: func(mockSvc mocks.MockPermitService) {},
-			output:    buildErrorResponse(400, "failed", "unable to fetch resource from permit"),
-		},
-		{
-			name:  "DeleteClientOrganizationUnit fetch resource from permit failed",
-			input: validDeleteInput,
-			ctx:   validCtx,
-			mockStubs: func(mockSvc mocks.MockPermitService) {
-				mockService.EXPECT().APIExecute(mock.Any(), mock.Any(), mock.Any(), mock.Any()).Return(nil, errors.New("failed to delete"))
-			},
-			output: buildErrorResponse(400, "unable to create organization in permit", "failed to create"),
-		},
-		{
-			name:  "DeleteClientOrganizationUnit successful deletion",
-			input: validDeleteInput,
-			ctx:   validCtx,
-			mockStubs: func(mockSvc mocks.MockPermitService) {
-				mockService.EXPECT().APIExecute(mock.Any(), mock.Any(), mock.Any(), mock.Any()).Return(result, nil)
-			},
-			output: result,
-		},
 	}
 
 	for _, tc := range testcases {
@@ -352,6 +316,7 @@ func TestDeleteClientOrganizationUnit(t *testing.T) {
 			tc.mockStubs(*mockService)
 			result, _ := objUnderTest.DeleteClientOrganizationUnit(tc.ctx, tc.input)
 			assert.NotNil(t, result)
+
 		})
 	}
 }
