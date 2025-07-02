@@ -268,15 +268,15 @@ func TestDeleteClientOrganizationUnit(t *testing.T) {
 	emptyUserId := ""
 
 	ginCtx := &gin.Context{}
-	ginCtx.Set("tenantID", "7ed6cfa6-fd7e-4a2a-bbce-773ef8ea4c12")
+	ginCtx.Set("tenantID", uuid.New().String())
 	ginCtx.Set("userID", emptyUserId)
 
 	ginCtxWithUserId := &gin.Context{}
-	ginCtxWithUserId.Set("tenantID", "7ed6cfa6-fd7e-4a2a-bbce-773ef8ea4c12")
-	ginCtxWithUserId.Set("userID", "b5b44e90-906e-458a-8bb1-e9e4ee180696")
+	ginCtxWithUserId.Set("tenantID", uuid.New().String())
+	ginCtxWithUserId.Set("userID", uuid.New().String())
 
 	ginCtxWithOutTenantId := &gin.Context{}
-	ginCtxWithOutTenantId.Set("userID", "b5b44e90-906e-458a-8bb1-e9e4ee180696")
+	ginCtxWithOutTenantId.Set("userID", uuid.New().String())
 
 	noGinCtx := context.Background()
 
