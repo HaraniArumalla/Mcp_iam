@@ -218,11 +218,21 @@ func mainWithContext(ctx context.Context) {
 
 func TestSetupServer(t *testing.T) {
 	// Set required environment variables to avoid failing
-	os.Setenv("PERMIT_PDP_ENDPOINT", "http://localhost:8000")
-	os.Setenv("PERMIT_PROJECT", "test-project")
-	os.Setenv("PERMIT_ENV", "test-env")
-	os.Setenv("PERMIT_TOKEN", "test-token")
-	os.Setenv("PERMIT_PDP_URL", "http://localhost:8000")
+	if err := os.Setenv("PERMIT_PDP_ENDPOINT", "http://localhost:8000"); err != nil {
+		t.Fatalf("Failed to set PERMIT_PDP_ENDPOINT: %v", err)
+	}
+	if err := os.Setenv("PERMIT_PROJECT", "test-project"); err != nil {
+		t.Fatalf("Failed to set PERMIT_PROJECT: %v", err)
+	}
+	if err := os.Setenv("PERMIT_ENV", "test-env"); err != nil {
+		t.Fatalf("Failed to set PERMIT_ENV: %v", err)
+	}
+	if err := os.Setenv("PERMIT_TOKEN", "test-token"); err != nil {
+		t.Fatalf("Failed to set PERMIT_TOKEN: %v", err)
+	}
+	if err := os.Setenv("PERMIT_PDP_URL", "http://localhost:8000"); err != nil {
+		t.Fatalf("Failed to set PERMIT_PDP_URL: %v", err)
+	}
 
 	// Skip full server setup in tests that would lead to connection errors
 	t.Skip("Skipping full server setup test to avoid connection errors and environment variable issues")
@@ -415,11 +425,21 @@ func TestHealthEndpoints(t *testing.T) {
 
 func TestSetupRoutes(t *testing.T) {
 	// Set required environment variables to avoid failures
-	os.Setenv("PERMIT_PDP_ENDPOINT", "http://localhost:8000")
-	os.Setenv("PERMIT_PROJECT", "test-project")
-	os.Setenv("PERMIT_ENV", "test-env")
-	os.Setenv("PERMIT_TOKEN", "test-token")
-	os.Setenv("PERMIT_PDP_URL", "http://localhost:8000")
+	if err := os.Setenv("PERMIT_PDP_ENDPOINT", "http://localhost:8000"); err != nil {
+		t.Fatalf("Failed to set PERMIT_PDP_ENDPOINT: %v", err)
+	}
+	if err := os.Setenv("PERMIT_PROJECT", "test-project"); err != nil {
+		t.Fatalf("Failed to set PERMIT_PROJECT: %v", err)
+	}
+	if err := os.Setenv("PERMIT_ENV", "test-env"); err != nil {
+		t.Fatalf("Failed to set PERMIT_ENV: %v", err)
+	}
+	if err := os.Setenv("PERMIT_TOKEN", "test-token"); err != nil {
+		t.Fatalf("Failed to set PERMIT_TOKEN: %v", err)
+	}
+	if err := os.Setenv("PERMIT_PDP_URL", "http://localhost:8000"); err != nil {
+		t.Fatalf("Failed to set PERMIT_PDP_URL: %v", err)
+	}
 
 	router := gin.New()
 

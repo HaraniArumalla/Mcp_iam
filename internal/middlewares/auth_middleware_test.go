@@ -11,17 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// mockGinMiddlewareFunc creates a mock for the GinMiddleware function in jwt authenticator
-func mockGinMiddlewareFunc(shouldSucceed bool) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if shouldSucceed {
-			c.Next()
-		} else {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
-		}
-	}
-}
-
 // TestAuthMiddleware tests the AuthMiddleware function in various scenarios
 func TestAuthMiddleware(t *testing.T) {
 	// Save original env vars to restore later
@@ -31,9 +20,15 @@ func TestAuthMiddleware(t *testing.T) {
 
 	// Restore env vars after test completes
 	defer func() {
-		os.Setenv("AZURE_TENANT_ID", originalTenantID)
-		os.Setenv("JWT_USER_CLAIM_FIELD", originalUserClaimField)
-		os.Setenv("JWKS_CACHE_DURATION", originalCacheDuration)
+		if err := os.Setenv("AZURE_TENANT_ID", originalTenantID); err != nil {
+			t.Fatalf("Failed to restore AZURE_TENANT_ID: %v", err)
+		}
+		if err := os.Setenv("JWT_USER_CLAIM_FIELD", originalUserClaimField); err != nil {
+			t.Fatalf("Failed to restore JWT_USER_CLAIM_FIELD: %v", err)
+		}
+		if err := os.Setenv("JWKS_CACHE_DURATION", originalCacheDuration); err != nil {
+			t.Fatalf("Failed to restore JWKS_CACHE_DURATION: %v", err)
+		}
 	}()
 
 	// Set up test cases
@@ -63,9 +58,15 @@ func TestAuthMiddleware(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Set up environment variables for this test
-			os.Setenv("AZURE_TENANT_ID", tc.tenantID)
-			os.Setenv("JWT_USER_CLAIM_FIELD", tc.userClaimField)
-			os.Setenv("JWKS_CACHE_DURATION", tc.cacheDuration)
+			if err := os.Setenv("AZURE_TENANT_ID", tc.tenantID); err != nil {
+				t.Fatalf("Failed to set AZURE_TENANT_ID: %v", err)
+			}
+			if err := os.Setenv("JWT_USER_CLAIM_FIELD", tc.userClaimField); err != nil {
+				t.Fatalf("Failed to set JWT_USER_CLAIM_FIELD: %v", err)
+			}
+			if err := os.Setenv("JWKS_CACHE_DURATION", tc.cacheDuration); err != nil {
+				t.Fatalf("Failed to set JWKS_CACHE_DURATION: %v", err)
+			}
 
 			// Set up the Gin router with the AuthMiddleware
 			gin.SetMode(gin.TestMode)
@@ -95,9 +96,15 @@ func TestAuthMiddlewareWithMockJWT(t *testing.T) {
 	mockAuthMiddleware := func(shouldSucceed bool) gin.HandlerFunc {
 		return func(c *gin.Context) {
 			// Set required environment variables
-			os.Setenv("AZURE_TENANT_ID", "mock-tenant-id")
-			os.Setenv("JWT_USER_CLAIM_FIELD", "sub")
-			os.Setenv("JWKS_CACHE_DURATION", "5m")
+			if err := os.Setenv("AZURE_TENANT_ID", "mock-tenant-id"); err != nil {
+				t.Fatalf("Failed to set AZURE_TENANT_ID: %v", err)
+			}
+			if err := os.Setenv("JWT_USER_CLAIM_FIELD", "sub"); err != nil {
+				t.Fatalf("Failed to set JWT_USER_CLAIM_FIELD: %v", err)
+			}
+			if err := os.Setenv("JWKS_CACHE_DURATION", "5m"); err != nil {
+				t.Fatalf("Failed to set JWKS_CACHE_DURATION: %v", err)
+			}
 
 			// Simulate the GinMiddleware call result
 			if shouldSucceed {
@@ -186,15 +193,27 @@ func TestAuthMiddlewareWithAuthenticatorError(t *testing.T) {
 
 	// Restore env vars after test completes
 	defer func() {
-		os.Setenv("AZURE_TENANT_ID", originalTenantID)
-		os.Setenv("JWT_USER_CLAIM_FIELD", originalUserClaimField)
-		os.Setenv("JWKS_CACHE_DURATION", originalCacheDuration)
+		if err := os.Setenv("AZURE_TENANT_ID", originalTenantID); err != nil {
+			t.Fatalf("Failed to restore AZURE_TENANT_ID: %v", err)
+		}
+		if err := os.Setenv("JWT_USER_CLAIM_FIELD", originalUserClaimField); err != nil {
+			t.Fatalf("Failed to restore JWT_USER_CLAIM_FIELD: %v", err)
+		}
+		if err := os.Setenv("JWKS_CACHE_DURATION", originalCacheDuration); err != nil {
+			t.Fatalf("Failed to restore JWKS_CACHE_DURATION: %v", err)
+		}
 	}()
 
 	// Set environment variables for this test
-	os.Setenv("AZURE_TENANT_ID", "test-tenant-id")
-	os.Setenv("JWT_USER_CLAIM_FIELD", "sub")
-	os.Setenv("JWKS_CACHE_DURATION", "5m")
+	if err := os.Setenv("AZURE_TENANT_ID", "test-tenant-id"); err != nil {
+		t.Fatalf("Failed to set AZURE_TENANT_ID: %v", err)
+	}
+	if err := os.Setenv("JWT_USER_CLAIM_FIELD", "sub"); err != nil {
+		t.Fatalf("Failed to set JWT_USER_CLAIM_FIELD: %v", err)
+	}
+	if err := os.Setenv("JWKS_CACHE_DURATION", "5m"); err != nil {
+		t.Fatalf("Failed to set JWKS_CACHE_DURATION: %v", err)
+	}
 
 	// Note: This test is limited since we can't easily mock the NewAuthenticator function
 	// In a real-world scenario, we would need to refactor the code to make it more testable

@@ -2,11 +2,9 @@ package middlewares
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -45,9 +43,6 @@ func (m *MockPermitSdkService) SomeMissingMethod(ctx context.Context, param stri
 	args := m.Called(ctx, param)
 	return args.Error(0)
 }
-
-// Original function to store and restore after tests
-var originalGetUserAndTenantID func(context.Context) (*uuid.UUID, *uuid.UUID, error)
 
 func TestExtractAction(t *testing.T) {
 	tests := []struct {
@@ -187,11 +182,4 @@ func TestContains(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
-}
-
-// errorReader is a mock io.Reader that always returns an error
-type errorReader struct{}
-
-func (e errorReader) Read(p []byte) (n int, err error) {
-	return 0, errors.New("simulated read error")
 }

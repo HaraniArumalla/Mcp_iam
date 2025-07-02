@@ -99,11 +99,6 @@ func (r *TestResourceQueryResolver) Resources(ctx context.Context) (models.Opera
 	return nil, nil
 }
 
-// Helper function to create a string pointer
-func stringPtr(s string) *string {
-	return &s
-}
-
 // setupTestContext creates a context with user and tenant IDs
 func setupTestContext(userIDStr, tenantIDStr string) context.Context {
 	gin.SetMode(gin.TestMode)
