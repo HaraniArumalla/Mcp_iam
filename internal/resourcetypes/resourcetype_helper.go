@@ -116,10 +116,11 @@ func MapToResourceActions(resourceID uuid.UUID, actionsData map[string]interface
 			continue
 		}
 		actions = append(actions, &models.Permission{
-			ID:        id,
-			Name:      key,
-			CreatedAt: helpers.GetString(actionData, "createdAt"),
-			UpdatedAt: helpers.GetString(actionData, "updatedAt"),
+			ID:          id,
+			Name:        key,
+			Description: helpers.StringPtr(helpers.GetString(actionData, "description")),
+			CreatedAt:   helpers.GetString(actionData, "createdAt"),
+			UpdatedAt:   helpers.GetString(actionData, "updatedAt"),
 		})
 	}
 	return actions

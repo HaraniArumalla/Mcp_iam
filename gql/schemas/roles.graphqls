@@ -185,6 +185,11 @@ type Permission {
   """
   createdBy: UUID!
   """
+  Description of the permission
+  """
+  description: String
+  
+  """
   Unique identifier of the permission
   """
   id: UUID!
