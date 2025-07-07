@@ -3,15 +3,19 @@ package middlewares
 import (
 	"context"
 	"encoding/json"
-	"iam_services_main_v1/config"
-	"iam_services_main_v1/helpers"
-	"iam_services_main_v1/internal/permit"
-	"iam_services_main_v1/pkg/logger"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/graphql-go/graphql/language/ast"
+	"github.com/graphql-go/graphql/language/parser"
+	"github.com/graphql-go/graphql/language/source"
+
+	"iam_services_main_v1/config"
+	"iam_services_main_v1/helpers"
+	"iam_services_main_v1/internal/permit"
+	"iam_services_main_v1/pkg/logger"
 )
 
 type graphQLRequest struct {
@@ -21,19 +25,17 @@ type graphQLRequest struct {
 
 func GraphQLAuthMiddleware(psc *permit.PermitSdkService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Only process POST /graphql
 		if c.Request.Method != http.MethodPost {
 			c.Next()
 			return
 		}
 
-		// Read body safely
 		body, err := io.ReadAll(c.Request.Body)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 			return
 		}
-		c.Request.Body = io.NopCloser(strings.NewReader(string(body))) // Reuse body
+		c.Request.Body = io.NopCloser(strings.NewReader(string(body))) // Restore body for downstream
 
 		var req graphQLRequest
 		if err := json.Unmarshal(body, &req); err != nil {
@@ -41,14 +43,15 @@ func GraphQLAuthMiddleware(psc *permit.PermitSdkService) gin.HandlerFunc {
 			return
 		}
 
-		// Extract action from operationName or query body
 		action := extractAction(req)
-		// Allow introspection queries without permission checks
+		logger.LogInfo("Extracted action from GraphQL request", "action", action)
+		// Allow introspection queries
 		if action == "IntrospectionQuery" || strings.Contains(req.Query, "__schema") {
 			logger.LogInfo("Allowing GraphQL introspection query")
 			c.Next()
 			return
 		}
+
 		resourceType := deriveResourceType(action)
 		if resourceType == "" {
 			logger.LogError("Unknown resourceType for action", "action", action)
@@ -69,63 +72,51 @@ func GraphQLAuthMiddleware(psc *permit.PermitSdkService) gin.HandlerFunc {
 	}
 }
 
+// Uses the graphql-go parser to extract the first field name from the query
 func extractAction(req graphQLRequest) string {
 	if req.OperationName != "" {
 		return req.OperationName
 	}
 
-	lines := strings.Split(req.Query, "\n")
-	inOperation := false
+	src := source.NewSource(&source.Source{
+		Body: []byte(req.Query),
+		Name: "GraphQL Request",
+	})
 
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
+	doc, err := parser.Parse(parser.ParseParams{Source: src})
+	if err != nil {
+		logger.LogError("Failed to parse GraphQL query", "error", err)
+		return ""
+	}
 
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		if strings.HasPrefix(line, "mutation") || strings.HasPrefix(line, "query") {
-			inOperation = true
-			continue
-		}
-
-		if inOperation {
-			// skip braces or empty lines
-			if strings.HasPrefix(line, "{") || strings.HasPrefix(line, "}") {
-				continue
-			}
-
-			// Example: "createAccount(input: {...}) {" → extract only "createAccount"
-			firstPart := strings.Fields(line)
-			if len(firstPart) > 0 {
-				action := firstPart[0]
-				// strip trailing `(` if it exists
-				if idx := strings.Index(action, "("); idx != -1 {
-					action = action[:idx]
+	for _, def := range doc.Definitions {
+		if op, ok := def.(*ast.OperationDefinition); ok {
+			if len(op.SelectionSet.Selections) > 0 {
+				if field, ok := op.SelectionSet.Selections[0].(*ast.Field); ok {
+					return field.Name.Value
 				}
-				return action
 			}
 		}
 	}
-
 	return ""
 }
 
-// deriveResourceType returns resource type based on action
+// Returns resource type based on action naming conventions
 func deriveResourceType(action string) string {
-	if strings.Contains(strings.ToLower(action), "tenant") {
+	lower := strings.ToLower(action)
+
+	switch {
+	case strings.Contains(lower, "tenant"):
 		return config.TenantResourceTypeID
-	}
-	if strings.Contains(strings.ToLower(action), "clientorganizationunit") {
+	case strings.Contains(lower, "clientorganizationunit"):
 		return config.ClientOrgUnitResourceTypeID
-	}
-	if strings.Contains(strings.ToLower(action), "account") {
+	case strings.Contains(lower, "account"):
 		return config.AccountResourceTypeID
+	default:
+		return ""
 	}
-	return ""
 }
 
-// Utility functions
 func contains(slice []string, val string) bool {
 	for _, item := range slice {
 		if strings.EqualFold(item, val) {
@@ -135,23 +126,24 @@ func contains(slice []string, val string) bool {
 	return false
 }
 
-// AuthMiddleware creates a Gin middleware for JWT authentication with the default OpenID endpoint
+// Middleware wrapper that checks authorization via Permit.io
 func AuthorizationMiddleware(ctx context.Context, psc *permit.PermitSdkService, action, resourceType, resourceId string) (bool, error) {
-
 	logger.LogInfo("Authorization middleware invoked", "action", action, "resourceType", resourceType, "resourceId", resourceId)
-	// Get user and tenant context
+
 	userID, tenantID, err := helpers.GetUserAndTenantID(ctx)
-	logger.LogInfo("User ID and Tenant ID", "userID", userID, "tenantID", tenantID)
 	if err != nil {
+		logger.LogError("Failed to extract user and tenant IDs", "error", err)
 		return false, err
 	}
+
 	logger.LogInfo("User ID and Tenant ID extracted", "userID", userID, "tenantID", tenantID)
-	logger.LogInfo("the action is and resourceType is", "action", action, "resourceType", resourceType)
-	// Check permission
+
 	_, err = psc.Check(ctx, userID.String(), strings.ToLower(action), resourceType, resourceId, tenantID.String())
 	if err != nil {
+		logger.LogError("Authorization failed", "error", err)
 		return false, err
 	}
+
 	logger.LogInfo("Authorization check passed", "userId", userID, "tenantId", tenantID, "action", action, "resourceType", resourceType, "resourceId", resourceId)
 	return true, nil
 }
