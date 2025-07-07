@@ -20,6 +20,8 @@ const (
 	AccountResourceTypeID       = "ed113f30-bbda-11ef-87ea-c03c5946f955"
 	TenantResourceTypeID        = "ed113bda-bbda-11ef-87ea-c03c5946f955"
 	RoleResourceTypeID          = "464b359e-3d43-4461-bb92-d36ebaf29082"
+	BindingResourceTypeID       = "e387c098-244a-4923-b3f2-4102967eec90"
+	PermissionResourceTypeID    = "9bc080d1-1159-4c72-ac49-81cd8d25deb2"
 )
 
 // Constant configuration variables

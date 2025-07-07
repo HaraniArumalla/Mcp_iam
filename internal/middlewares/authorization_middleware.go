@@ -112,6 +112,12 @@ func deriveResourceType(action string) string {
 		return config.ClientOrgUnitResourceTypeID
 	case strings.Contains(lower, "account"):
 		return config.AccountResourceTypeID
+	case strings.Contains(lower, "role"):
+		return config.RoleResourceTypeID
+	case strings.Contains(lower, "permission"):
+		return config.PermissionResourceTypeID
+	case strings.Contains(lower, "binding"):
+		return config.BindingResourceTypeID
 	default:
 		return ""
 	}
