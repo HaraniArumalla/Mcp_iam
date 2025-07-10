@@ -96,9 +96,9 @@ func extractAction(req graphQLRequest) string {
 					fullName := field.Name.Value
 
 					// Strip known subgraph suffix like _mcp_iam_o
-					if strings.HasSuffix(fullName, config.SubgraphName) {
-						return strings.TrimSuffix(fullName, config.SubgraphName)
-					}
+					// if strings.HasSuffix(fullName, config.SubgraphName) {
+					// 	return strings.TrimSuffix(fullName, config.SubgraphName)
+					// }
 					// Find last occurrence of double underscores (used by supergraph/subgraph)
 					if idx := strings.LastIndex(fullName, "__"); idx != -1 {
 						return fullName[:idx]
