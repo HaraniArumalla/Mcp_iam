@@ -99,6 +99,10 @@ func extractAction(req graphQLRequest) string {
 					if strings.HasSuffix(fullName, config.SubgraphName) {
 						return strings.TrimSuffix(fullName, config.SubgraphName)
 					}
+					// Find last occurrence of double underscores (used by supergraph/subgraph)
+					if idx := strings.LastIndex(fullName, "__"); idx != -1 {
+						return fullName[:idx]
+					}
 
 					// Default: return full name
 					return fullName
