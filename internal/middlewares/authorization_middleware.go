@@ -74,6 +74,7 @@ func GraphQLAuthMiddleware(psc *permit.PermitSdkService) gin.HandlerFunc {
 
 // Uses the graphql-go parser to extract the first field name from the query
 func extractAction(req graphQLRequest) string {
+	logger.LogInfo("Extracting action from GraphQL request", "operationName", req.OperationName, "query", req.Query)
 	if req.OperationName != "" {
 		return req.OperationName
 	}
