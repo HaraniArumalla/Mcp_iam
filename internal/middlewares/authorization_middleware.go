@@ -94,13 +94,15 @@ func extractAction(req graphQLRequest) string {
 			if len(op.SelectionSet.Selections) > 0 {
 				if field, ok := op.SelectionSet.Selections[0].(*ast.Field); ok {
 					fullName := field.Name.Value
-
+					logger.LogInfo("Extracted full action name from GraphQL query", "fullName", fullName)
 					// Strip known subgraph suffix like _mcp_iam_o
 					// if strings.HasSuffix(fullName, config.SubgraphName) {
 					// 	return strings.TrimSuffix(fullName, config.SubgraphName)
 					// }
 					// Find last occurrence of double underscores (used by supergraph/subgraph)
 					if idx := strings.LastIndex(fullName, "__"); idx != -1 {
+						logger.LogInfo("Stripping subgraph suffix from action name", "fullName", fullName, "index", idx)
+						logger.LogInfo("Returning action name without subgraph suffix", "actionName", fullName[:idx])
 						return fullName[:idx]
 					}
 
