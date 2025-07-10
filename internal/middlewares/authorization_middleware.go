@@ -93,7 +93,15 @@ func extractAction(req graphQLRequest) string {
 		if op, ok := def.(*ast.OperationDefinition); ok {
 			if len(op.SelectionSet.Selections) > 0 {
 				if field, ok := op.SelectionSet.Selections[0].(*ast.Field); ok {
-					return field.Name.Value
+					fullName := field.Name.Value
+
+					// Strip known subgraph suffix like _mcp_iam_o
+					if strings.HasSuffix(fullName, config.SubgraphName) {
+						return strings.TrimSuffix(fullName, config.SubgraphName)
+					}
+
+					// Default: return full name
+					return fullName
 				}
 			}
 		}

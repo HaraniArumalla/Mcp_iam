@@ -11,6 +11,7 @@ const (
 	DBCharset           = "utf8mb4"
 	AccountsContextKey  = "accounts"
 	GenericErrorMessage = "An error has occurred. Please try again later or contact support."
+	SubgraphName        = "mcp_iam_o"
 )
 
 // Permit configuration variables
