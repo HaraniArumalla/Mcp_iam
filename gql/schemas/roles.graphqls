@@ -216,14 +216,13 @@ input CreatePermissionInput {
   """
   assignableScopeRef: UUID!
   """
-  Unique identifier of the permission
+  Description of the permission
   """
-  id: UUID!
+  description: String!
   """
   Name of the permission
   """
-  name: String!
-  
+  name: String!  
 }
 
 """
@@ -235,9 +234,9 @@ input UpdatePermissionInput {
   """
   assignableScopeRef: UUID!
   """
-  Unique identifier of the permission
+  Description of the permission
   """
-  id: UUID!
+  description: String!
   """
   Updated name of the permission
   """

@@ -48,7 +48,7 @@ func (r *Resolver) Mutation() generated.MutationResolver {
 		TenantMutationResolver:                 &tenants.TenantMutationResolver{PC: r.PC, PSC: r.PSC},
 		ClientOrganizationUnitMutationResolver: &clientorganizationunits.ClientOrganizationUnitMutationResolver{PC: r.PC},
 		RoleMutationResolver:                   &role.RoleMutationResolver{PC: r.PC},
-		PermissionMutationResolver:             &permissions.PermissionMutationResolver{},
+		PermissionMutationResolver:             &permissions.PermissionMutationResolver{PC: r.PC},
 		BindingsMutationResolver:               &bindings.BindingsMutationResolver{PC: r.PC},
 		RootMutationResolver:                   &root.RootMutationResolver{},
 	}
