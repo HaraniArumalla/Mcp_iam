@@ -33,6 +33,42 @@ type ResourceType {
   updatedAt: DateTime!
 }
 
+"""
+Defines input fields for creating a resource type
+"""
+input CreateResourceInput {
+  """
+  Description of the role
+  """
+  description: String
+  """
+  Unique identifier of the role
+  """
+  id: UUID!
+  """
+  Name of the role
+  """
+  name: String!
+  """
+  Permissions associated with the role
+  """
+  permissions: [CreateResourcePermissionInput!]!
+}
+
+"""
+Defines input fields for creating a permission
+"""
+input CreateResourcePermissionInput {
+  """
+  Description of the permission
+  """
+  description: String!
+  """
+  Name of the permission
+  """
+  name: String!  
+}
+
 
 """
 Represents a Role entity
