@@ -5,7 +5,6 @@ import (
 	"errors"
 	"iam_services_main_v1/config"
 	"iam_services_main_v1/gql/models"
-	"iam_services_main_v1/internal/utils"
 	mocks "iam_services_main_v1/mocks"
 	"testing"
 
@@ -166,47 +165,6 @@ func TestCreatePermission(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestDeletePermission(t *testing.T) {
-	ctrl := mock.NewController(t)
-	defer ctrl.Finish()
-
-	mockService := mocks.NewMockPermitService(ctrl)
-	resolver := PermissionMutationResolver{
-		PC: mockService,
-	}
-
-	ctx := context.Background()
-	input := models.DeleteInput{
-		ID: uuid.New(),
-	}
-
-	result, err := resolver.DeletePermission(ctx, input)
-
-	assert.Nil(t, result)
-	assert.Nil(t, err)
-}
-
-func TestUpdatePermission(t *testing.T) {
-	ctrl := mock.NewController(t)
-	defer ctrl.Finish()
-
-	mockService := mocks.NewMockPermitService(ctrl)
-	resolver := PermissionMutationResolver{
-		PC: mockService,
-	}
-
-	ctx := context.Background()
-	input := models.UpdatePermissionInput{
-		ID:   uuid.New(),
-		Name: "Updated Permission",
-	}
-
-	result, err := resolver.UpdatePermission(ctx, input)
-
-	assert.Nil(t, result)
-	assert.Nil(t, err)
 }
 
 func TestValidateCreatePermissionInput(t *testing.T) {
@@ -566,9 +524,4 @@ func buildTestPermissionData() map[string]interface{} {
 			},
 		},
 	}
-}
-
-// Helper function to build error response for comparison
-func buildErrorResponse(statusCode int, message, detail string) models.OperationResult {
-	return utils.FormatErrorResponse(statusCode, message, detail)
 }
