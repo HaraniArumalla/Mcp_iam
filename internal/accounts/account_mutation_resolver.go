@@ -128,8 +128,21 @@ func (r *AccountMutationResolver) UpdateAccount(ctx context.Context, input model
 func (r *AccountMutationResolver) DeleteAccount(ctx context.Context, input models.DeleteInput) (models.OperationResult, error) {
 	logger.LogInfo("Started the delete account operation")
 
+	resourceURL := fmt.Sprintf("resource_instances/%s", input.ID)
+	accountResource, err := r.PC.SendRequest(ctx, "GET", resourceURL, nil)
+	if err != nil {
+		return utils.FormatErrorResponse(http.StatusBadRequest, "Failed to get existing account data", err.Error()), nil
+	}
+	if accountResource == nil {
+		return utils.FormatErrorResponse(http.StatusNotFound, "Account not found", "The account with the provided ID does not exist"), nil
+	}
+	resourceType := helpers.GetString(accountResource, "resource")
+	if resourceType != config.AccountResourceTypeID {
+		return utils.FormatErrorResponse(http.StatusBadRequest, "The provided account ID does not match the expected resource type for deletion", "The provided account ID does not match the expected resource type for deletion"), nil
+	}
+
 	// Delete the resource instance from Permit
-	_, err := r.PC.SendRequest(ctx, "DELETE", fmt.Sprintf("resource_instances/%s", input.ID), map[string]interface{}{})
+	_, err = r.PC.SendRequest(ctx, "DELETE", fmt.Sprintf("resource_instances/%s", input.ID), map[string]interface{}{})
 	if err != nil {
 		return utils.FormatErrorResponse(http.StatusBadRequest, "Failed to delete account in Permit", err.Error()), nil
 	}
