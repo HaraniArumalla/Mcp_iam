@@ -38,10 +38,6 @@ Defines input fields for creating a resource type
 """
 input CreateResourceInput {
   """
-  Description of the role
-  """
-  description: String
-  """
   Unique identifier of the role
   """
   id: UUID!

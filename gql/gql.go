@@ -51,6 +51,7 @@ func (r *Resolver) Mutation() generated.MutationResolver {
 		PermissionMutationResolver:             &permissions.PermissionMutationResolver{PC: r.PC},
 		BindingsMutationResolver:               &bindings.BindingsMutationResolver{PC: r.PC},
 		RootMutationResolver:                   &root.RootMutationResolver{},
+		ResourceTypeMutationResolver:           &resourcetypes.ResourceTypeMutationResolver{PC: r.PC},
 	}
 }
 
@@ -77,6 +78,7 @@ type mutationResolver struct {
 	*permissions.PermissionMutationResolver
 	*bindings.BindingsMutationResolver
 	*root.RootMutationResolver
+	*resourcetypes.ResourceTypeMutationResolver
 }
 
 // Account resolves fields for the Account type

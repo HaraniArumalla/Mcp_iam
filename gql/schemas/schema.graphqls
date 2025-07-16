@@ -490,6 +490,16 @@ type Mutation {
     input: CreatePermissionInput!
   ): OperationResult!
 
+   """
+  Create a new resource.
+  """
+  createResource(
+    """
+    Input data for creating an resource
+    """
+    input: CreateResourceInput!
+  ): OperationResult!
+
   """
   Create a new role.
   """
