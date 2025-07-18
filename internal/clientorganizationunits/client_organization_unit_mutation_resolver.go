@@ -162,6 +162,20 @@ func (r *ClientOrganizationUnitMutationResolver) DeleteClientOrganizationUnit(ct
 	}
 
 	logger.Info("delete client organization request received")
+
+	resourceURL := fmt.Sprintf("resource_instances/%s", input.ID)
+	clientOrgResource, err := r.PC.SendRequest(ctx, "GET", resourceURL, nil)
+	if err != nil {
+		return utils.FormatErrorResponse(http.StatusBadRequest, "Failed to get existing client org data", err.Error()), nil
+	}
+	if clientOrgResource == nil {
+		return utils.FormatErrorResponse(http.StatusNotFound, "Client org not found", "The client org with the provided ID does not exist"), nil
+	}
+	resourceType := helpers.GetString(clientOrgResource, "resource")
+	if resourceType != config.ClientOrgUnitResourceTypeID {
+		return utils.FormatErrorResponse(http.StatusBadRequest, "The provided client org ID does not match the expected resource type for deletion", "The provided client org ID does not match the expected resource type for deletion"), nil
+	}
+
 	tenantID, err := helpers.GetTenantID(ctx)
 	if err != nil {
 		return utils.FormatErrorResponse(http.StatusBadRequest, "Failed to get tenant ID", err.Error()), nil
