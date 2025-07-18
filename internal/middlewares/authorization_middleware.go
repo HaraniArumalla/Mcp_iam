@@ -133,6 +133,8 @@ func deriveResourceType(action string) string {
 		return config.PermissionResourceTypeID
 	case strings.Contains(lower, "binding"):
 		return config.BindingResourceTypeID
+	case strings.Contains(lower, "resourcetype"):
+		return config.RootResourceTypeID
 	default:
 		return ""
 	}
