@@ -42,18 +42,13 @@ func (r *ResourceTypeMutationResolver) CreateResource(ctx context.Context, input
 func (r *ResourceTypeMutationResolver) prepareResourceActions(resource models.CreateResourceInput) (map[string]interface{}, error) {
 	// Example implementation: return an empty map and nil error
 	actions := make(map[string]interface{})
-	if resource.Permissions != nil {
-		for _, permission := range resource.Permissions {
-			name := strings.ToLower(permission.Name)
-			namekey := strings.ReplaceAll(name, " ", "_")
-			actions[namekey] = map[string]interface{}{
-				"name":        permission.Name,
-				"description": permission.Description,
-			}
+	definedActions := map[string]string{"create": "Create", "read": "Read", "update": "Update", "delete": "Delete"}
+	for key, val := range definedActions {
+		name := strings.ToLower(key + "_" + resource.Name)
+		namekey := strings.ReplaceAll(name, " ", "_")
+		actions[namekey] = map[string]interface{}{
+			"name": val + " " + resource.Name,
 		}
-	} else {
-		logger.LogError("Permissions are nil in the resource input")
-		return nil, fmt.Errorf("permissions cannot be nil")
 	}
 
 	log.Println("Prepared actions for resource:", actions)

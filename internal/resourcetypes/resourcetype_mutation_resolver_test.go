@@ -38,28 +38,6 @@ func TestCreateResource(t *testing.T) {
 	validInput := models.CreateResourceInput{
 		ID:   resourceID,
 		Name: "test_resource",
-		Permissions: []*models.CreateResourcePermissionInput{
-			{
-				Name:        "Read",
-				Description: "Read permission",
-			},
-			{
-				Name:        "Write",
-				Description: "Write permission",
-			},
-		},
-	}
-
-	invalidInputNoPermissions := models.CreateResourceInput{
-		ID:          resourceID,
-		Name:        "test_resource",
-		Permissions: nil,
-	}
-
-	invalidInputEmptyPermissions := models.CreateResourceInput{
-		ID:          resourceID,
-		Name:        "test_resource",
-		Permissions: []*models.CreateResourcePermissionInput{},
 	}
 
 	// Mock resource data that will be returned after creation
@@ -77,36 +55,6 @@ func TestCreateResource(t *testing.T) {
 			name:  "successful resource creation",
 			ctx:   validCtx,
 			input: validInput,
-			setupMocks: func() {
-				// Mock the POST request to create resource
-				mockService.EXPECT().
-					SendRequest(validCtx, "POST", "resources", mock.Any()).
-					Return(map[string]interface{}{"status": "success"}, nil).
-					Times(1)
-
-				// Mock the GET request to fetch resource details
-				mockService.EXPECT().
-					SendRequest(validCtx, "GET", "resources/"+resourceID.String(), nil).
-					Return(resourceData, nil).
-					Times(1)
-			},
-			expectedError:  false,
-			expectedStatus: 200,
-		},
-		{
-			name:  "resource creation fails - nil permissions",
-			ctx:   validCtx,
-			input: invalidInputNoPermissions,
-			setupMocks: func() {
-				// No mocks needed as it should fail in prepareResourceActions
-			},
-			expectedError:  false, // Returns error response, not actual error
-			expectedStatus: 400,
-		},
-		{
-			name:  "resource creation fails - empty permissions",
-			ctx:   validCtx,
-			input: invalidInputEmptyPermissions,
 			setupMocks: func() {
 				// Mock the POST request to create resource
 				mockService.EXPECT().
@@ -180,50 +128,28 @@ func TestPrepareResourceActions(t *testing.T) {
 		expectedCount int
 	}{
 		{
-			name: "valid permissions",
+			name: "basic test with resource name",
 			input: models.CreateResourceInput{
-				Permissions: []*models.CreateResourcePermissionInput{
-					{
-						Name:        "Read Permission",
-						Description: "Read access",
-					},
-					{
-						Name:        "Write Permission",
-						Description: "Write access",
-					},
-				},
+				Name: "SampleResource",
 			},
 			expectedError: false,
-			expectedCount: 2,
+			expectedCount: 4, // create, read, update, delete
 		},
 		{
-			name: "nil permissions",
+			name: "resource name with spaces",
 			input: models.CreateResourceInput{
-				Permissions: nil,
-			},
-			expectedError: true,
-			expectedCount: 0,
-		},
-		{
-			name: "empty permissions",
-			input: models.CreateResourceInput{
-				Permissions: []*models.CreateResourcePermissionInput{},
+				Name: "My Resource",
 			},
 			expectedError: false,
-			expectedCount: 0,
+			expectedCount: 4,
 		},
 		{
-			name: "permission with spaces in name",
+			name: "empty resource name",
 			input: models.CreateResourceInput{
-				Permissions: []*models.CreateResourcePermissionInput{
-					{
-						Name:        "Read Write Delete",
-						Description: "Complex permission",
-					},
-				},
+				Name: "",
 			},
 			expectedError: false,
-			expectedCount: 1,
+			expectedCount: 4,
 		},
 	}
 
@@ -233,24 +159,15 @@ func TestPrepareResourceActions(t *testing.T) {
 
 			if tc.expectedError {
 				assert.Error(t, err)
-				assert.Nil(t, actions)
 			} else {
 				assert.NoError(t, err)
-				assert.NotNil(t, actions)
 				assert.Equal(t, tc.expectedCount, len(actions))
 
-				// Validate action structure for non-empty results
-				if tc.expectedCount > 0 {
-					for key, action := range actions {
-						actionMap, ok := action.(map[string]interface{})
-						assert.True(t, ok, "Action should be a map")
-						assert.Contains(t, actionMap, "name")
-						assert.Contains(t, actionMap, "description")
-
-						// Verify key transformation (lowercase, spaces replaced with underscores)
-						assert.NotContains(t, key, " ")
-						assert.Equal(t, key, key) // Should be lowercase
-					}
+				for key, action := range actions {
+					assert.NotContains(t, key, " ")
+					actionMap, ok := action.(map[string]interface{})
+					assert.True(t, ok)
+					assert.Contains(t, actionMap, "name")
 				}
 			}
 		})

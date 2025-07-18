@@ -45,24 +45,6 @@ input CreateResourceInput {
   Name of the role
   """
   name: String!
-  """
-  Permissions associated with the role
-  """
-  permissions: [CreateResourcePermissionInput!]!
-}
-
-"""
-Defines input fields for creating a permission
-"""
-input CreateResourcePermissionInput {
-  """
-  Description of the permission
-  """
-  description: String!
-  """
-  Name of the permission
-  """
-  name: String!  
 }
 
 
