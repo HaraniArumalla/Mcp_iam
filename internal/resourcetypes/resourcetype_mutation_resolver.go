@@ -19,7 +19,7 @@ type ResourceTypeMutationResolver struct {
 	PC permit.PermitService
 }
 
-func (r *ResourceTypeMutationResolver) CreateResource(ctx context.Context, input models.CreateResourceInput) (models.OperationResult, error) {
+func (r *ResourceTypeMutationResolver) CreateResourceType(ctx context.Context, input models.CreateResourceInput) (models.OperationResult, error) {
 	logger.LogInfo("Started the create resource operation")
 
 	// Prepare resource actions for the resource from the input data

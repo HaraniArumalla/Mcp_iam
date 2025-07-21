@@ -493,7 +493,7 @@ type Mutation {
    """
   Create a new resource.
   """
-  createResource(
+  createResourceType(
     """
     Input data for creating an resource
     """

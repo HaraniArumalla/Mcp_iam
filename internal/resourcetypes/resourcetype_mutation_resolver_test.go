@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateResource(t *testing.T) {
+func TestCreateResourceType(t *testing.T) {
 	ctrl := mock.NewController(t)
 	defer ctrl.Finish()
 
@@ -111,7 +111,7 @@ func TestCreateResource(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.setupMocks()
 
-			result, _ := resolver.CreateResource(tc.ctx, tc.input)
+			result, _ := resolver.CreateResourceType(tc.ctx, tc.input)
 
 			assert.NotNil(t, result)
 		})
