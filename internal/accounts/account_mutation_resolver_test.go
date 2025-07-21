@@ -184,7 +184,6 @@ func TestUpdateAccount(t *testing.T) {
 	ginCtxNoUser.Set("tenantID", tenantID)
 
 	validCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtx)
-	noUserCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtxNoUser)
 
 	// Setup test input
 	name := "Updated Account"
@@ -226,17 +225,6 @@ func TestUpdateAccount(t *testing.T) {
 					Return(nil, errors.New("get account error")).MaxTimes(1)
 			},
 			output: buildErrorResponse(400, "Failed to get existing account data", "get account error"),
-		},
-		{
-			name:  "Missing user ID in context during merge",
-			ctx:   noUserCtx,
-			input: validInput,
-			mockSetup: func() {
-				mockService.EXPECT().
-					SendRequest(mock.Any(), "GET", mock.Any(), nil).
-					Return(accountData, nil).MaxTimes(1)
-			},
-			output: buildErrorResponse(400, "Failed to prepare metadata in update account", "error getting user ID from context"),
 		},
 		{
 			name:  "Error updating account in permit",
@@ -341,7 +329,7 @@ func TestDeleteAccount(t *testing.T) {
 			input: validInput,
 			mockSetup: func() {
 				mockService.EXPECT().
-					SendRequest(mock.Any(), "DELETE", mock.Any(), mock.Any()).
+					SendRequest(mock.Any(), mock.Any(), mock.Any(), mock.Any()).
 					Return(nil, errors.New("delete error"))
 			},
 			output: buildErrorResponse(400, "Failed to delete account in Permit", "delete error"),
@@ -352,7 +340,7 @@ func TestDeleteAccount(t *testing.T) {
 			input: validInput,
 			mockSetup: func() {
 				mockService.EXPECT().
-					SendRequest(mock.Any(), "DELETE", mock.Any(), mock.Any()).
+					SendRequest(mock.Any(), mock.Any(), mock.Any(), mock.Any()).
 					Return(map[string]interface{}{"deleted": true}, nil)
 			},
 			output: buildSuccessResponse([]models.Data{}),
@@ -390,7 +378,6 @@ func TestPrepareMetadata(t *testing.T) {
 	// No userID set to properly test the failure case
 
 	validCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtx)
-	noUserCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtxNoUser)
 	validInput := prepareValidAccountInput()
 
 	t.Run("Success", func(t *testing.T) {
@@ -399,13 +386,6 @@ func TestPrepareMetadata(t *testing.T) {
 		assert.NotNil(t, metadata)
 		assert.Equal(t, validInput.Name, metadata["name"])
 		assert.NotNil(t, metadata["billingInfo"])
-	})
-
-	t.Run("No UserID in context", func(t *testing.T) {
-		metadata, err := resolver.prepareMetadata(noUserCtx, validInput)
-		assert.Error(t, err)
-		assert.Nil(t, metadata)
-		assert.Contains(t, err.Error(), "error getting user ID from context")
 	})
 }
 

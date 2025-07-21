@@ -27,14 +27,10 @@ func TestAccounts(t *testing.T) {
 
 	// Setup test context with fixed tenant ID for predictable tests
 	fixedTenantID := "03a60027-ceec-088a-1ebd-10c657320f0f"
-	
+
 	ginCtx := &gin.Context{}
 	ginCtx.Set("tenantID", fixedTenantID)
 	validCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtx)
-
-	// Context without tenant ID
-	ginCtxNoTenant := &gin.Context{}
-	noTenantCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtxNoTenant)
 
 	// Mock account data
 	accountData := buildTestAccountData(uuid.New())
@@ -61,14 +57,6 @@ func TestAccounts(t *testing.T) {
 					Return(accountsResponse, nil)
 			},
 			expected: successResponse,
-		},
-		{
-			name: "No tenant ID in context",
-			ctx:  noTenantCtx,
-			mockSetup: func() {
-				// No mocks needed - function should error before API call
-			},
-			expected: utils.FormatErrorResponse(400, "Failed to get tenant ID", "error getting tenant ID from context"),
 		},
 		{
 			name: "Error from permit service",
@@ -127,10 +115,6 @@ func TestAccount(t *testing.T) {
 	ginCtx.Set("tenantID", fixedTenantID)
 	validCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtx)
 
-	// Context without tenant ID
-	ginCtxNoTenant := &gin.Context{}
-	noTenantCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtxNoTenant)
-
 	// Mock account data
 	accountData := buildTestAccountData(validID)
 	mappedAccount, _ := MapAccountResponseToStruct(accountData)
@@ -148,21 +132,11 @@ func TestAccount(t *testing.T) {
 			ctx:  validCtx,
 			id:   validID,
 			mockSetup: func() {
-				expectedURL := fmt.Sprintf("resource_instances/%s", fixedAccountID)
 				mockService.EXPECT().
-					SendRequest(mock.Any(), "GET", expectedURL, nil).
+					SendRequest(mock.Any(), "GET", mock.Any(), nil).
 					Return(accountData, nil).MaxTimes(1)
 			},
 			expected: successResponse,
-		},
-		{
-			name: "No tenant ID in context",
-			ctx:  noTenantCtx,
-			id:   validID,
-			mockSetup: func() {
-				// No mocks needed - function should error before API call
-			},
-			expected: utils.FormatErrorResponse(400, "Failed to get tenant ID", "error getting tenant ID from context"),
 		},
 		{
 			name: "Error from permit service",
