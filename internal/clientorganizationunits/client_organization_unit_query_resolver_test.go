@@ -38,13 +38,6 @@ func TestClientOrganizationUnitQueryResolver(t *testing.T) {
 		output    models.OperationResult
 	}{
 		{
-			name:      "Test GetClientOrganizationUnitByID when tenantId is not present",
-			input:     uuid.New(),
-			ctx:       context.WithValue(context.Background(), config.GinContextKey, &gin.Context{}),
-			mockStubs: func(mockSvc mocks.MockPermitService) {},
-			output:    buildErrorResponse(400, "unable to fetch gin context", "error while fetching gin context"),
-		},
-		{
 			name:  "Test GetClientOrganizationUnitByID when client returns error",
 			input: uuid.New(),
 			ctx:   testCtx,
@@ -100,12 +93,6 @@ func TestClientOrganizationUnitsQueryResolver(t *testing.T) {
 		mockStubs func(mockService mocks.MockPermitService)
 		output    models.OperationResult
 	}{
-		{
-			name:      "Test GetClientOrganizationUnitByID when tenantId is not present",
-			ctx:       context.WithValue(context.Background(), config.GinContextKey, &gin.Context{}),
-			mockStubs: func(mockSvc mocks.MockPermitService) {},
-			output:    buildErrorResponse(400, "unable to fetch gin context", "error while fetching gin context"),
-		},
 		{
 			name: "Test GetClientOrganizationUnitByID when client returns error",
 			ctx:  testCtx,

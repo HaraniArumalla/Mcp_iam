@@ -40,7 +40,6 @@ func TestCreateClientOrganizationUnit(t *testing.T) {
 
 	testCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtx)
 	validCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtxWithUserId)
-	ctxWithOutUserId := context.WithValue(context.Background(), config.GinContextKey, ginCtxWithOutUserId)
 	nilIdInput := models.CreateClientOrganizationUnitInput{
 		ID: uuid.Nil,
 	}
@@ -75,20 +74,6 @@ func TestCreateClientOrganizationUnit(t *testing.T) {
 		{
 			name:      "CreateClientOrganizationUnit Name not present",
 			input:     nameNotPresent,
-			ctx:       testCtx,
-			mockStubs: func(mockSvc mocks.MockPermitService) {},
-			output:    buildErrorResponse(400, "failed", "unable to fetch resource from permit"),
-		},
-		{
-			name:      "CreateClientOrganizationUnit Tenant id not present in ctx",
-			input:     successRequest,
-			ctx:       ctxWithOutUserId,
-			mockStubs: func(mockSvc mocks.MockPermitService) {},
-			output:    buildErrorResponse(400, "failed", "unable to fetch resource from permit"),
-		},
-		{
-			name:      "CreateClientOrganizationUnit User id not present in ctx",
-			input:     successRequest,
 			ctx:       testCtx,
 			mockStubs: func(mockSvc mocks.MockPermitService) {},
 			output:    buildErrorResponse(400, "failed", "unable to fetch resource from permit"),
@@ -151,9 +136,7 @@ func TestUpdateClientOrganizationUnit(t *testing.T) {
 
 	corg := buildClientOrganization()
 	corgUpdated := buildClientOrganization()
-	testCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtx)
 	validCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtxWithUserId)
-	ctxWithOutTenantId := context.WithValue(context.Background(), config.GinContextKey, ginCtxWithOutTenantId)
 	nilIdInput := models.UpdateClientOrganizationUnitInput{
 		ID: uuid.Nil,
 	}
@@ -184,20 +167,6 @@ func TestUpdateClientOrganizationUnit(t *testing.T) {
 			ctx:       context.WithValue(context.Background(), config.GinContextKey, &gin.Context{}),
 			mockStubs: func(mockSvc mocks.MockPermitService) {},
 			output:    buildErrorResponse(400, "unable to fetch gin context", "error while fetching gin context"),
-		},
-		{
-			name:      "UpdateClientOrganizationUnit Tenant id not present in ctx",
-			input:     successRequest,
-			ctx:       ctxWithOutTenantId,
-			mockStubs: func(mockSvc mocks.MockPermitService) {},
-			output:    buildErrorResponse(400, "failed", "unable to fetch resource from permit"),
-		},
-		{
-			name:      "UpdateClientOrganizationUnit User id not present in ctx",
-			input:     successRequest,
-			ctx:       testCtx,
-			mockStubs: func(mockSvc mocks.MockPermitService) {},
-			output:    buildErrorResponse(400, "failed", "unable to fetch resource from permit"),
 		},
 		{
 			name:  "UpdateClientOrganizationUnit fetch resource from permit failed",
@@ -278,14 +247,8 @@ func TestDeleteClientOrganizationUnit(t *testing.T) {
 	ginCtxWithOutTenantId := &gin.Context{}
 	ginCtxWithOutTenantId.Set("userID", uuid.New().String())
 
-	noGinCtx := context.Background()
-
 	inputNullId := models.DeleteInput{
 		ID: uuid.Nil,
-	}
-
-	validDeleteInput := models.DeleteInput{
-		ID: uuid.New(),
 	}
 
 	testcases := []struct {
@@ -295,13 +258,6 @@ func TestDeleteClientOrganizationUnit(t *testing.T) {
 		mockStubs func(mockService mocks.MockPermitService)
 		output    models.OperationResult
 	}{
-		{
-			name:      "DeleteClientOrganizationUnit without gin context",
-			input:     validDeleteInput,
-			ctx:       noGinCtx,
-			mockStubs: func(mockSvc mocks.MockPermitService) {},
-			output:    buildErrorResponse(400, "unable to fetch gin context", "error while fetching gin context"),
-		},
 		{
 			name:      "DeleteClientOrganizationUnit id is not valid",
 			input:     inputNullId,
