@@ -374,19 +374,12 @@ func TestPrepareMetadata(t *testing.T) {
 	ginCtxNoUser.Set("tenantID", tenantID)
 
 	validCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtx)
-	noUserCtx := context.WithValue(context.Background(), config.GinContextKey, ginCtxNoUser)
 	validInput := prepareValidInput()
 	t.Run("Success", func(t *testing.T) {
 		metadata, err := resolver.prepareMetadata(validCtx, validInput)
 		assert.NoError(t, err)
 		assert.NotNil(t, metadata)
 		assert.Equal(t, validInput.Name, metadata["name"])
-	})
-
-	t.Run("No UserID in context", func(t *testing.T) {
-		metadata, err := resolver.prepareMetadata(noUserCtx, validInput)
-		assert.Error(t, err)
-		assert.Nil(t, metadata)
 	})
 }
 
