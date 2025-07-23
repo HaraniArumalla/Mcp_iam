@@ -123,7 +123,7 @@ func (r *ClientOrganizationUnitMutationResolver) UpdateClientOrganizationUnit(ct
 
 	attributes := clientOrg[constants.ATTRIBUTES].(map[string]interface{})
 
-	updatedAt := time.Now().String()
+	updatedAt := time.Now()
 	if attributes != nil {
 		attributes[constants.NAME] = input.Name
 		attributes[constants.DESCRIPTION] = input.Description
