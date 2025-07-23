@@ -239,9 +239,34 @@ func (r *AccountMutationResolver) createRelationshipTuples(ctx context.Context, 
 	if strings.ToLower(string(input.RelationType)) == "parent" {
 		subjectType = config.ClientOrgUnitResourceTypeID + ":" + input.ParentID.String()
 		objectType = config.AccountResourceTypeID + ":" + input.ID.String()
+		resourceURL := fmt.Sprintf("resource_instances/%s", input.ParentID)
+		resourceResponse, err := r.PC.SendRequest(ctx, "GET", resourceURL, nil)
+		if err != nil {
+			return err
+		}
+		if resourceResponse == nil {
+			return fmt.Errorf("parent resource not found for ID: %s", input.ParentID)
+		}
+
+		if helpers.GetString(resourceResponse, "resource") != config.ClientOrgUnitResourceTypeID {
+			return fmt.Errorf("parent resource type mismatch: expected %s, got %s", config.ClientOrgUnitResourceTypeID, helpers.GetString(resourceResponse, "resource"))
+		}
+
 	} else {
 		subjectType = config.AccountResourceTypeID + ":" + input.ID.String()
 		objectType = config.TenantResourceTypeID + ":" + input.ParentID.String()
+		resourceURL := fmt.Sprintf("resource_instances/%s", input.ParentID)
+		resourceResponse, err := r.PC.SendRequest(ctx, "GET", resourceURL, nil)
+		if err != nil {
+			return err
+		}
+		if resourceResponse == nil {
+			return fmt.Errorf("parent resource not found for ID: %s", input.ParentID)
+		}
+
+		if helpers.GetString(resourceResponse, "resource") != config.TenantResourceTypeID {
+			return fmt.Errorf("parent resource type mismatch: expected %s, got %s", config.TenantResourceTypeID, helpers.GetString(resourceResponse, "resource"))
+		}
 	}
 	_, err := r.PC.SendRequest(ctx, "POST", "relationship_tuples", map[string]interface{}{
 		"object":   objectType,
